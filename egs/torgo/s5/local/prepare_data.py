@@ -26,6 +26,7 @@ Options:
 from __future__ import print_function, unicode_literals
 import copy
 import json
+import logging
 import os
 import random
 import locale
@@ -40,14 +41,18 @@ __author__ = 'rmarxer'
 def c_sort(x):
     locale.setlocale(locale.LC_ALL, ('C', ''))
     x.sort(cmp=locale.strcoll)
+    return x
 
 
-def validate_kaldi_data(data_dirs):
+def validate_kaldi_data(data_dirs, options=''):
     for data_dir in data_dirs:
-        subprocess.call('utils/validate_data_dir.sh --no-feats {}'.format(data_dir))
+        cmd = 'utils/validate_data_dir.sh {options} {data_dir}'.format(data_dir=data_dir,
+                                                                       options=options)
+        logging.info(cmd)
+        subprocess.call(cmd, shell=True)
 
 
-def torgo_to_kaldi(utt):
+def torgo_to_kaldi(utterance):
     """Takes as input a utterance from the TORGO dataset and returns a utterance for the Kaldi scripts:
 
     uttid - utterance ID
@@ -60,9 +65,11 @@ def torgo_to_kaldi(utt):
     gender - [optional] M if male F if female
 
 
-    :param utt:
+    :param utterance:
     :return:
     """
+    utt_id, utt = utterance
+
     prompt = utt['stimuli']['prompt']
 
     transcription = prompt
@@ -81,35 +88,69 @@ def torgo_to_kaldi(utt):
 
     transcription = transcription.upper()
 
-    return {'uttid': '{speaker}_{session}_{id}'.format(**utt),
-            'transcription': transcription,
-            'speaker': '{speaker}'.format(**utt),
-            'gender': utt['speaker'][0],
-            'audio_filename': utt['audio_filename']}
+    utt.update({'transcription': transcription})
+
+    return utt_id, utt
 
 
-def prepare_kaldi_data(utterance_sets, output_root):
+def write_sorted(directory, filename, format_pattern, utterance_set):
+    lines = [format_pattern.format(**utt)
+             for utt in utterance_set]
+    lines = c_sort(lines)
+
+    with open(os.path.join(directory, filename), 'w') as f:
+        f.writelines(['{}\n'.format(line) for line in lines])
+
+
+def prepare_kaldi_data(dataset, utterance_sets, output_root):
     data_dirs = []
 
-    for name, utterance_set in utterance_sets.items():
-        output_dir = os.path.join(output_root, name)
+    speaker_set = dataset['speakers']
 
-        if not os.path.isdir(output_dir):
-            os.makedirs(output_dir)
+    for name, utterances in utterance_sets.items():
+        base_path = os.path.join(output_root, 'data', name)
 
-        # Create text file (<utt-id> <transcription>)
-        text_lines = ['{uttid} {transcription}'.format(**utt)
-                      for utt in utterance_set]
+        if not os.path.isdir(base_path):
+            os.makedirs(base_path)
 
-        c_sort(text_lines)
+        utterance_set = [dataset['utterances'][utterance] for utterance in utterances]
 
-        data_dirs.append(output_dir)
+        # Create text file (<utterance-id> <transcription>)
+        write_sorted(base_path, 'text', '{utterance_id} {transcription}', utterance_set)
+
+        # Create wav.scp file (<recording-id> <audio-extended-filename>)
+        write_sorted(base_path, 'wav.scp', '{recording_id} {audio_filename}', utterance_set)
+
+        # Create segments file (<utt-id> <rec-id> <start_time> <end_time>)
+        if any([utt.get('start_time', None) for utt in utterance_set]) \
+                or any([utt.get('end_time', None) for utt in utterance_set]):
+            write_sorted(base_path, 'segments', '{utterance_id} {recording_id} {start_time} {end_time}', utterance_set)
+
+        # Create reco2file_channel file (<recording-id> <filename> <recording-side (A or B)>)
+        # TODO: implement this if needed
+
+        # Create utt2spk file (<utterance-id> <speaker-id>)
+        write_sorted(base_path, 'utt2spk', '{utterance_id} {speaker}', utterance_set)
+
+        # Create spk2gender file (<speaker-id> <gender (m or f)>)
+        write_sorted(base_path, 'spk2gender', '{speaker} {gender}',
+                     [{'speaker': speaker, 'gender': speaker_set[speaker]['gender']}
+                      for speaker in {utt['speaker'] for utt in utterance_set}])
+
+        # Create spk2utt file (<speaker-id> <utterance-id-1> <utterance-id-2> <utterance-id-3> ...)
+        write_sorted(base_path, 'spk2utt', '{speaker} {uttids}',
+                     [{'speaker': speaker, 'uttids': ' '.join(c_sort([utt['utterance_id']
+                                                                      for utt in utterance_set
+                                                                      if utt['speaker'] == speaker]))}
+                      for speaker in {utt['speaker'] for utt in utterance_set}])
+
+        data_dirs.append(base_path)
 
     return data_dirs
 
 
 def split_train_test_dev(utterances, train_count=0.8, test_count=0.1, dev_count=0.1):
-    randomized = copy.deepcopy(utterances)
+    randomized = copy.deepcopy(utterances.keys())
     random.shuffle(randomized)
 
     count = len(randomized)
@@ -132,21 +173,21 @@ def main():
         dataset = json.load(f)
 
     # Filter utterance, keep only those with prompted stimuli
-    utterances_filtered = filter(lambda utt: (utt['stimuli']
-                                              and utt['stimuli']['type'] == 'prompt'
-                                              and utt['audio_filename']),
-                                 dataset['utterances'])
+    utterances_filtered = filter(lambda utt: (utt[1]['stimuli']
+                                              and utt[1]['stimuli']['type'] == 'prompt'
+                                              and utt[1]['audio_filename']),
+                                 dataset['utterances'].items())
 
-    utterances_kaldi = map(torgo_to_kaldi, utterances_filtered)
+    dataset['utterances'] = dict(map(torgo_to_kaldi, utterances_filtered))
 
     # Split the dataset in train, dev and test
-    utterance_sets = split_train_test_dev(utterances_kaldi)
+    utterance_sets = split_train_test_dev(dataset['utterances'])
 
     # Create the data files needed by kaldi (text, utt2spk, segments, ...)
-    data_dirs = prepare_kaldi_data(utterance_sets, output_root)
+    data_dirs = prepare_kaldi_data(dataset, utterance_sets, output_root)
 
     # Validata the data files
-    validate_kaldi_data(data_dirs)
+    validate_kaldi_data(data_dirs, options='--no-feats')
 
     return
 
