@@ -116,6 +116,7 @@ def prepare_kaldi_data(dataset, utterance_sets, output_root):
         utterance_set = [dataset['utterances'][utterance] for utterance in utterances]
 
         # Create text file (<utterance-id> <transcription>)
+        # TODO: Allow adding a transcription prefix and suffix (e.g. padding with '<UNK>' for non endpointed data)
         write_sorted(base_path, 'text', '{utterance_id} {transcription}', utterance_set)
 
         # Create wav.scp file (<recording-id> <audio-extended-filename>)
