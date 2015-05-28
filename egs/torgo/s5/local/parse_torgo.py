@@ -132,10 +132,16 @@ def parse_torgo(path):
 
             if os.path.isfile(wav_filename):
                 utterance['audio_filename'] = wav_filename
+
+                # Here we pass the wav files through sox
+                # because some TORGO files are multichunk and this is not supported by kaldi
+                utterance['audio_rspecifier'] = 'sox {} -t wav - |'.format(wav_filename)
+
                 utterance.update(get_audio_info(wav_filename))
 
             else:
                 utterance['audio_filename'] = None
+                utterance['audio_rspecifier'] = None
 
             utterance['audio_transcription_filename'] = path
             utterance['audio_transcription'] = load_transcription(path,

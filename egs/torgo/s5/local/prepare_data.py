@@ -119,7 +119,7 @@ def prepare_kaldi_data(dataset, utterance_sets, output_root):
         write_sorted(base_path, 'text', '{utterance_id} {transcription}', utterance_set)
 
         # Create wav.scp file (<recording-id> <audio-extended-filename>)
-        write_sorted(base_path, 'wav.scp', '{recording_id} {audio_filename}', utterance_set)
+        write_sorted(base_path, 'wav.scp', '{recording_id} {audio_rspecifier}', utterance_set)
 
         # Create segments file (<utt-id> <rec-id> <start_time> <end_time>)
         if any([utt.get('start_time', None) for utt in utterance_set]) \
@@ -172,10 +172,21 @@ def main():
     with open(args['<torgo_json>']) as f:
         dataset = json.load(f)
 
+    # Blacklist of utterances (corrupted audios, transcriptions etc...)
+    def accept_utterance(utterance_item):
+        utt_id, utt = utterance_item
+
+        return (
+            utt['stimuli']
+            and utt['stimuli']['type'] == 'prompt'
+            and utt['audio_filename']
+            and utt['sensor'] == 'headMic'
+            and os.path.isfile(utt['audio_filename'])
+            and os.path.getsize(utt['audio_filename']) > 1000  # filter audio files under 1kb
+        )
+
     # Filter utterance, keep only those with prompted stimuli
-    utterances_filtered = filter(lambda utt: (utt[1]['stimuli']
-                                              and utt[1]['stimuli']['type'] == 'prompt'
-                                              and utt[1]['audio_filename']),
+    utterances_filtered = filter(accept_utterance,
                                  dataset['utterances'].items())
 
     dataset['utterances'] = dict(map(torgo_to_kaldi, utterances_filtered))
