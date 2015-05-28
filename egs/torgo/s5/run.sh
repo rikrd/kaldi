@@ -13,7 +13,7 @@
 . cmd.sh
 . path.sh
 
-nj=40
+nj=6
 decode_nj=8
 
 stage=0
@@ -38,4 +38,15 @@ if [ $stage -le 0 ]; then
 
   #local/prepare_lm.sh || exit 1
 
+fi
+
+
+# Feature extraction
+feat_dir=$REC_ROOT/data/mfcc_features
+if [ $stage -le 1 ]; then
+  for set in test dev train; do
+    dir=$REC_ROOT/data/$set
+    steps/make_mfcc.sh --nj $nj --cmd "$train_cmd" $dir $dir/log $dir/data || exit 1
+    steps/compute_cmvn_stats.sh $dir $dir/log $dir/data || exit 1
+  done
 fi

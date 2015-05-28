@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-host=`hostname -f`
+fullhost=`hostname -f`
 
 export KALDI_ROOT=`pwd`/../../..
-if [ ${host#*.} == "windows.dcs.shef.ac.uk" ]; then
+if [ ${fullhost#*.}=="windows.dcs.shef.ac.uk" ]; then
     export TORGO_ROOT="$HOME/data/TORGO_original/"
     export REC_ROOT="."
 fi
