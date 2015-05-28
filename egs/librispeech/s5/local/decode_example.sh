@@ -6,6 +6,17 @@
 # Script that shows how to modify the language model, and how to run the
 # decoding from scratch.
 
+warn="WARNING: you are supposed to unpack the tar ball under egs/librispeech/s5"
+
+if [ ! -f cmd.sh ]; then
+  echo "cmd.sh file is missing"
+  echo $warn && exit 1
+fi
+if [ ! -f path.sh ]; then
+  echo "path.sh file is missing"
+  echo $warn && exit 1
+fi
+
 . ./cmd.sh || exit 1
 . ./path.sh || exit 1
 
@@ -25,7 +36,8 @@ lang=data/lang
 lang_test=data/lang_test
 lang_test_tmp=data/local/lang_test_tmp/
 mkdir -p $lang_test_tmp
-cp -rT $lang $lang_test
+mkdir -p $lang_test
+cp -r $lang/* $lang_test
 gunzip -c $lm | utils/find_arpa_oovs.pl $lang_test/words.txt \
   > $lang_test_tmp/oovs.txt || exit 1
 gunzip -c $lm | \
