@@ -50,3 +50,25 @@ if [ $stage -le 1 ]; then
     steps/compute_cmvn_stats.sh $dir $dir/log $dir/data || exit 1
   done
 fi
+
+
+# Train
+if [ $stage -le 2 ]; then
+  steps/train_mono.sh --nj $nj --cmd "$train_cmd" \
+    $REC_ROOT/data/train $REC_ROOT/data/lang $REC_ROOT/exp/mono0a || exit 1
+
+  steps/align_si.sh --nj $nj --cmd "$train_cmd" \
+    $REC_ROOT/data/train $REC_ROOT/data/lang $REC_ROOT/exp/mono0a $REC_ROOT/exp/mono0a_ali || exit 1
+
+  steps/train_deltas.sh --cmd "$train_cmd" \
+    2500 30000 $REC_ROOT/data/train $REC_ROOT/data/lang $REC_ROOT/exp/mono0a_ali $REC_ROOT/exp/tri1 || exit 1
+
+  # utils/mkgraph.sh data/lang_test exp/tri1 exp/tri1/graph || exit 1
+
+  # steps/decode.sh --nj $decode_nj --cmd "$decode_cmd" \
+  #   --num-threads 4 --parallel-opts "-pe smp 4" \
+  #   exp/tri1/graph data/dev exp/tri1/decode_dev || exit 1
+  # steps/decode.sh --nj $decode_nj --cmd "$decode_cmd" \
+  #   --num-threads 4 --parallel-opts $parallel_opts \
+  #   exp/tri1/graph data/test exp/tri1/decode_test || exit 1
+fi

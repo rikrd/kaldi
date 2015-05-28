@@ -11,6 +11,7 @@
 export train_cmd="run.pl"
 export decode_cmd="run.pl"
 export cuda_cmd="run.pl"
+export parallel_opts=""
 
 host=`hostname -f`
 
@@ -19,4 +20,5 @@ if [ ${host#*.} == "iceberg.shef.ac.uk" ]; then
   export train_cmd="queue.pl"
   export decode_cmd="queue.pl"
   export cuda_cmd="queue.pl --gpu=1"
+  export parallel_opts="-pe openmp 4"
 fi
