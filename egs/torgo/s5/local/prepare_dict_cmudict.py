@@ -56,7 +56,7 @@ def get_and_parse_cmudict(work_dir):
                 continue
 
             word, pronunciation = line.strip().split('  ', 2)
-            lexicon[word.upper()] = pronunciation.lower()
+            lexicon[word.upper()] = pronunciation
 
     # Prepare the extra questions for CMUDict (different stress of each phone)
     extra_questions = []
@@ -77,13 +77,13 @@ def get_and_parse_cmudict(work_dir):
             groups = itertools.groupby(sorted(results, key=lambda x: x[2]), key=lambda x: x[2])
             for stress, phonesymbols_stress in groups:
                 phonesymbols = zip(*list(phonesymbols_stress))[0]
-                extra_questions.append(phonesymbols)
+                extra_questions.append(list(phonesymbols))
 
             # Group the phone symbols by phone and create the nonsilence_phones
             groups = itertools.groupby(sorted(results, key=lambda x: x[1]), key=lambda x: x[1])
             for phone, phonesymbols_stress in groups:
                 phonesymbols = zip(*list(phonesymbols_stress))[0]
-                nonsilence_phones.append(phonesymbols)
+                nonsilence_phones.append(list(phonesymbols))
 
     silence_phones = []
 
@@ -128,10 +128,9 @@ def write_pattern_sorted(directory, filename, format_pattern, utterance_set):
 
 def prepare_kaldi_dict(output_dir,
                        lexicon_info,
-                       optional_silence_phone='sil',
+                       optional_silence_phone='SIL',
                        extra_words={},
-                       extra_silence_phones=set(),
-                       add_silence_question=True):
+                       extra_silence_phones=set()):
     """Prepares the dict folder that Kaldi expects.
 
     :param output_dir:
@@ -152,7 +151,7 @@ def prepare_kaldi_dict(output_dir,
 
     # Add extra words to the lexicon
     for word, pronunciation in extra_words.iteritems():
-        lexicon[word.upper()] = pronunciation.lower()
+        lexicon[word.upper()] = pronunciation
 
     silence_phones |= extra_silence_phones
 
@@ -172,7 +171,7 @@ def prepare_kaldi_dict(output_dir,
     for pronunciation in lexicon.values():
         all_phones |= set(pronunciation.split())
 
-    extra_nonsilence_phones = all_phones - (set(itertools.chain(nonsilence_phones)) | silence_phones)
+    extra_nonsilence_phones = all_phones - (set(itertools.chain.from_iterable(nonsilence_phones)) | silence_phones)
     if extra_nonsilence_phones:
         raise ValueError('Detected the following extra phones in the lexicon '
                          'that do not appear in nonsilence nor '
@@ -185,13 +184,9 @@ def prepare_kaldi_dict(output_dir,
         write_lines_sorted(f, lines)
 
     # Write the extra questions
-    other_questions = []
-    if add_silence_question:
-        other_questions.append(silence_phones)
-
     extra_questions_filename = os.path.join(output_dir, 'extra_questions.txt')
     with codecs.open(extra_questions_filename, 'w', encoding='utf-8') as f:
-        lines = [' '.join(c_sort(extra_question)) for extra_question in other_questions + extra_questions]
+        lines = [' '.join(c_sort(extra_question)) for extra_question in extra_questions]
         write_lines_sorted(f, lines)
 
     # Write the lexicon
