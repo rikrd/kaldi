@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
                                          pad_input,
                                          acoustic_scale);
           double like;
-          if (DecodeUtteranceLatticeOnlineFaster(
+          if (DecodeUtteranceLatticeFasterOnline(
                   decoder, nnet_decodable, trans_model, word_syms, utt,
                   acoustic_scale, determinize, allow_partial, &alignment_writer,
                   &words_writer, &compact_lattice_writer, &lattice_writer,

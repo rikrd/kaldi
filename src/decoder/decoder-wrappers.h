@@ -116,7 +116,7 @@ bool DecodeUtteranceLatticeFaster(
 /// other obvious place to put it.  If determinize == false, it writes to
 /// lattice_writer, else to compact_lattice_writer.  The writers for
 /// alignments and words will only be written to if they are open.
-bool DecodeUtteranceLatticeOnlineFaster(
+bool DecodeUtteranceLatticeFasterOnline(
     LatticeFasterOnlineDecoder &decoder, // not const but is really an input.
     DecodableInterface &decodable, // not const but is really an input.
     const TransitionModel &trans_model,
