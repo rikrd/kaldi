@@ -29,7 +29,6 @@
 #include "nnet2/decodable-am-nnet.h"
 #include "base/timer.h"
 
-
 int main(int argc, char *argv[]) {
   try {
     using namespace kaldi;
@@ -108,7 +107,7 @@ int main(int argc, char *argv[]) {
       VectorFst<StdArc> *decode_fst = fst::ReadFstKaldi(fst_in_str);
 
       {
-        LatticeFasterDecoder decoder(*decode_fst, config);
+        LatticeFasterOnlineDecoder decoder(*decode_fst, config);
     
         for (; !feature_reader.Done(); feature_reader.Next()) {
           std::string utt = feature_reader.Key();
@@ -125,7 +124,7 @@ int main(int argc, char *argv[]) {
                                          pad_input,
                                          acoustic_scale);
           double like;
-          if (DecodeUtteranceLatticeFaster(
+          if (DecodeUtteranceLatticeOnlineFaster(
                   decoder, nnet_decodable, trans_model, word_syms, utt,
                   acoustic_scale, determinize, allow_partial, &alignment_writer,
                   &words_writer, &compact_lattice_writer, &lattice_writer,
@@ -155,7 +154,7 @@ int main(int argc, char *argv[]) {
           continue;
         }
         
-        LatticeFasterDecoder decoder(fst_reader.Value(), config);
+        LatticeFasterOnlineDecoder decoder(fst_reader.Value(), config);
 
         bool pad_input = true;
         DecodableAmNnet nnet_decodable(trans_model,
@@ -164,7 +163,7 @@ int main(int argc, char *argv[]) {
                                        pad_input,
                                        acoustic_scale);
         double like;
-        if (DecodeUtteranceLatticeFaster(
+        if (DecodeUtteranceLatticeOnlineFaster(
                 decoder, nnet_decodable, trans_model, word_syms, utt,
                 acoustic_scale, determinize, allow_partial, &alignment_writer,
                 &words_writer, &compact_lattice_writer, &lattice_writer,
