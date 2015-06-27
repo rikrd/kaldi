@@ -18,6 +18,7 @@
 // limitations under the License.
 
 #include "feat/wave-reader.h"
+
 #include "online2/online-nnet2-decoding.h"
 #include "online2/onlinebin-util.h"
 #include "online2/online-timing.h"
@@ -25,6 +26,8 @@
 #include "fstext/fstext-lib.h"
 #include "lat/lattice-functions.h"
 #include "thread/kaldi-thread.h"
+
+#include "util/kaldi-io.h"
 
 namespace kaldi {
 
@@ -95,6 +98,7 @@ int main(int argc, char *argv[]) {
     ParseOptions po(usage);
     
     std::string word_syms_rxfilename;
+    std::string features_wspecifier;
     
     OnlineEndpointConfig endpoint_config;
 
@@ -125,6 +129,9 @@ int main(int argc, char *argv[]) {
                 "--chunk-length=-1.");
     po.Register("num-threads-startup", &g_num_threads,
                 "Number of threads used when initializing iVector extractor.");
+    po.Register("features-wspecifier", &features_wspecifier,
+                "Filename where to store the features [for debug output]");
+
     
     feature_config.Register(&po);
     nnet2_decoding_config.Register(&po);
@@ -176,6 +183,13 @@ int main(int argc, char *argv[]) {
     RandomAccessTableReader<WaveHolder> wav_reader(wav_rspecifier);
     CompactLatticeWriter clat_writer(clat_wspecifier);
     
+    BaseFloatMatrixWriter kaldi_writer;
+    if (features_wspecifier != "") {
+        if (!kaldi_writer.Open(features_wspecifier))
+          KALDI_ERR << "Could not initialize output with wspecifier "
+                    << features_wspecifier;
+    }
+
     OnlineTimingStats timing_stats;
     
     for (; !spk2utt_reader.Done(); spk2utt_reader.Next()) {
@@ -250,6 +264,23 @@ int main(int argc, char *argv[]) {
         }
         decoder.FinalizeDecoding();
 
+        // Get the features from the decoder
+        if (kaldi_writer.IsOpen()) {
+            int frame_count = feature_pipeline.NumFramesReady();
+            int frame_dim = feature_pipeline.Dim();
+
+            Matrix<BaseFloat> features(frame_count, frame_dim);
+            Vector<BaseFloat> feature(frame_dim);
+            features.SetZero();  // Check if needed
+
+            for (int i = 0; i<frame_count; ++i) {
+                feature_pipeline.GetFrame(i, &feature);
+                features.Row(i).AddVec(1.0, feature);
+            }
+
+            kaldi_writer.Write(utt, features);
+        }
+
         CompactLattice clat;
         bool end_of_utterance = true;
         decoder.GetLattice(end_of_utterance, &clat);
@@ -275,6 +306,10 @@ int main(int argc, char *argv[]) {
     }
     timing_stats.Print(online);
     
+    if (kaldi_writer.IsOpen()) {
+        kaldi_writer.Close();
+    }
+
     KALDI_LOG << "Decoded " << num_done << " utterances, "
               << num_err << " with errors.";
     KALDI_LOG << "Overall likelihood per frame was " << (tot_like / num_frames)
