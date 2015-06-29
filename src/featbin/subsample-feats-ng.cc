@@ -38,8 +38,8 @@ int main(int argc, char *argv[]) {
         "Works in the same way as subsample-feats but the n is an rspecifier.\n"
         "This allows to have different n per utterance.\n"
         "\n"
-        "Usage: subsample-feats [options] <subsample-rspecifier> <in-rspecifier> <out-wspecifier>\n"
-        "  e.g. subsample-feats ark:n.ark ark:- ark:-\n";
+        "Usage: subsample-feats-ng [options] <subsample-rspecifier> <in-rspecifier> <out-wspecifier>\n"
+        "  e.g. subsample-feats-ng ark:n.ark ark:- ark:-\n";
     
     ParseOptions po(usage);
     
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     
     po.Read(argc, argv);
     
-    if (po.NumArgs() != 2) {
+    if (po.NumArgs() != 3) {
       po.PrintUsage();
       exit(1);
     }    
