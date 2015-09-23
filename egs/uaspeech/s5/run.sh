@@ -32,7 +32,7 @@ if [ $stage -le 0 ]; then
 
   local/prepare_data.py $REC_ROOT/tmp/uaspeech.json $REC_ROOT  || exit 1
 
-  local/prepare_dict.py $REC_ROOT/tmp/dict || exit 1
+  local/prepare_dict_cmudict.py $REC_ROOT/tmp/dict || exit 1
 
   utils/prepare_lang.sh $REC_ROOT/tmp/dict "<UNK>" $REC_ROOT/tmp/lang $REC_ROOT/data/lang || exit 1
 
