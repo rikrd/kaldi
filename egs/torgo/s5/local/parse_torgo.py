@@ -195,7 +195,7 @@ def main():
         logging.warning('TORGO database (in JSON) {} already exists. Not overwriting.'.format(output_json_path))
         return
 
-    if not os.path.isdir(os.path.dirname(output_json_path)):
+    if not os.path.isdir(os.path.dirname(os.path.abspath(output_json_path))):
         os.makedirs(os.path.dirname(output_json_path))
 
     logging.info('Parsing TORGO database')
