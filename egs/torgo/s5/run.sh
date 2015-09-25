@@ -63,12 +63,9 @@ if [ $stage -le 2 ]; then
   steps/train_deltas.sh --cmd "$train_cmd" \
     2500 30000 $REC_ROOT/data/train $REC_ROOT/data/lang $REC_ROOT/exp/mono0a_ali $REC_ROOT/exp/tri1 || exit 1
 
-  # utils/mkgraph.sh data/lang_test exp/tri1 exp/tri1/graph || exit 1
+  utils/mkgraph.sh $REC_ROOT/data/lang_test $REC_ROOT/exp/tri1 $REC_ROOT/exp/tri1/graph || exit 1
 
-  # steps/decode.sh --nj $decode_nj --cmd "$decode_cmd" \
-  #   --num-threads 4 --parallel-opts "-pe smp 4" \
-  #   exp/tri1/graph data/dev exp/tri1/decode_dev || exit 1
-  # steps/decode.sh --nj $decode_nj --cmd "$decode_cmd" \
-  #   --num-threads 4 --parallel-opts $parallel_opts \
-  #   exp/tri1/graph data/test exp/tri1/decode_test || exit 1
+  steps/decode.sh --nj $decode_nj --cmd "$decode_cmd" \
+    --num-threads 4 --parallel-opts $parallel_opts \
+    $REC_ROOT/exp/tri1/graph $REC_ROOT/data/test $REC_ROOT/exp/tri1/decode_test || exit 1
 fi
