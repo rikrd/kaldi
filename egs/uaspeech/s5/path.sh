@@ -2,7 +2,6 @@
 
 fullhost=`hostname -f`
 
-export KALDI_ROOT=`pwd`/../../..
 if [[ ${fullhost} == *"windows.dcs.shef.ac.uk" ]]; then
     export UASPEECH_ROOT="$HOME/data/UASPEECH/"
     export REC_ROOT="results"
