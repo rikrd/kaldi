@@ -13,10 +13,10 @@ export decode_cmd="run.pl"
 export cuda_cmd="run.pl"
 export parallel_opts=""
 
-host=`hostname -f`
+fullhost=`hostname -f`
 
 # If on the Iceberg cluster...
-if [ ${host#*.} == "iceberg.shef.ac.uk" ]; then
+if [ ${fullhost#*.} == "iceberg.shef.ac.uk" ]; then
   export train_cmd="queue.pl"
   export decode_cmd="queue.pl"
   export cuda_cmd="queue.pl --gpu=1"
