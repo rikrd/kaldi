@@ -13,8 +13,8 @@
 . cmd.sh
 . path.sh
 
-nj=6
-decode_nj=8
+nj=12
+decode_nj=16
 parallel_opts=
 
 stage=0
