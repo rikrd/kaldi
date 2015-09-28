@@ -10,12 +10,12 @@
 
 mkdir -p $HOME/local
 
-cd $HOME/local
-
 dir=`mktemp -d` && cd ${dir}
 yumdownloader --resolve sox
 
-for pkg in ${dir}/*.rpm; do
+cd $HOME/local
+
+for pkg in ${dir}/*.rpm ; do
     rpm2cpio ${pkg} | cpio -idv
 done
 
@@ -25,4 +25,4 @@ echo "# Lines added by the install_sox.sh script of the kaldi UASPEECH egs" >> $
 echo "LD_LIBRARY_PATH=$HOME/local/usr/lib:$HOME/local/usr/lib64:$LD_LIBRARY_PATH" >> $HOME/.bashrc
 echo "PATH=$HOME/local/usr/bin:$PATH" >> $HOME/.bashrc
 
-cd -
+
