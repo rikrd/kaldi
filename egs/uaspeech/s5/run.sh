@@ -22,6 +22,8 @@ overwrite=false
 
 . utils/parse_options.sh # accept options
 
+makedir -fp ${REC_ROOT}
+
 overwrite_flag=""
 if [ "$overwrite" = true ]; then
     overwrite_flag="--overwrite"
