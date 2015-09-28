@@ -3,10 +3,10 @@
 fullhost=`hostname -f`
 
 export KALDI_ROOT=`pwd`/../../..
-if [ ${fullhost#*.}=="windows.dcs.shef.ac.uk" ]; then
+if [[ ${fullhost} == *"windows.dcs.shef.ac.uk" ]]; then
     export UASPEECH_ROOT="$HOME/data/UASPEECH/"
     export REC_ROOT="results"
-elif [ ${fullhost#*.}=="iceberg.shef.ac.uk" ]; then
+elif [[ ${fullhost} == *"iceberg.shef.ac.uk" ]]; then
     export UASPEECH_ROOT="/fastdata/ac1rpm/UASPEECH/"
     export REC_ROOT="results"
 fi

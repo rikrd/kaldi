@@ -16,7 +16,9 @@ export parallel_opts=""
 fullhost=`hostname -f`
 
 # If on the Iceberg cluster...
-if [ ${fullhost#*.} == "iceberg.shef.ac.uk" ]; then
+if [[ ${fullhost} == *"iceberg.shef.ac.uk" ]]; then
+  module load apps/python/2.7
+
   export train_cmd="queue.pl"
   export decode_cmd="queue.pl"
   export cuda_cmd="queue.pl --gpu=1"
