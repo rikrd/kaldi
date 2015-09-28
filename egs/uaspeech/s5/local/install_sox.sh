@@ -21,9 +21,10 @@ done
 
 rm -r ${dir}
 
+echo "" >> $HOME/.bashrc
 echo "# Lines added by the install_sox.sh script of the kaldi UASPEECH egs" >> $HOME/.bashrc
 echo "export LD_LIBRARY_PATH=$HOME/local/usr/lib:$HOME/local/usr/lib64:$LD_LIBRARY_PATH" >> $HOME/.bashrc
 echo "export PATH=$HOME/local/usr/bin:$PATH" >> $HOME/.bashrc
-
+echo "" >> $HOME/.bashrc
 
 
