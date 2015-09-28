@@ -22,7 +22,7 @@ overwrite=false
 
 . utils/parse_options.sh # accept options
 
-makedir -fp ${REC_ROOT}
+mkdir -p ${REC_ROOT}
 
 overwrite_flag=""
 if [ "$overwrite" = true ]; then
