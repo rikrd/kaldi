@@ -148,7 +148,7 @@ def parse_uaspeech(uaspeech_path):
             utterance['audio_filename'] = wav_filename
 
             # Some files in UASPEECH (M01 and F04 specially) have corrupted headers
-            utterance['audio_rspecifier'] = 'sox {} -t wav - |'.format(wav_filename)
+            utterance['audio_rspecifier'] = 'local/wav_passthrough.py {} - |'.format(wav_filename)
 
             # utterance.update(get_audio_info(wav_filename))
 
