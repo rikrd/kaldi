@@ -20,6 +20,7 @@ import docopt
 import sys
 import io
 
+
 def main():
     args = docopt.docopt(__doc__)
 
