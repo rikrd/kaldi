@@ -44,14 +44,12 @@ def main():
         wo.setnframes(nframes)
         wo.writeframes(w.readframes(nframes))
 
-
         fo.write(output.getvalue())
 
     finally:
         w.close()
         wo.close()
 
-        fo.write(output.getvalue())
         output.close()
 
         f.close()
