@@ -43,6 +43,9 @@ def main():
         wo.writeframes(w.readframes(nframes))
 
     finally:
+        w.close()
+        wo.close()
+
         f.close()
         fo.close()
 
