@@ -51,8 +51,8 @@ def main():
         w.close()
         wo.close()
 
-        output.close()
         fo.write(output.getvalue())
+        output.close()
 
         f.close()
         fo.close()
