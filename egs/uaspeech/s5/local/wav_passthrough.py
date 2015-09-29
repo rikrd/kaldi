@@ -18,7 +18,7 @@ from __future__ import print_function, unicode_literals
 import wave
 import docopt
 import sys
-
+import io
 
 def main():
     args = docopt.docopt(__doc__)
@@ -34,17 +34,25 @@ def main():
         else:
             fo = open(args['<output_wav>'], 'wb')
 
+        output = io.BytesIO()
+
         w = wave.open(f, 'r')
-        wo = wave.open(fo, 'wb')
+        wo = wave.open(output, 'wb')
 
         wo.setparams(w.getparams())
         nframes = w.getnframes()
         wo.setnframes(nframes)
         wo.writeframes(w.readframes(nframes))
 
+
+        fo.write(output.getvalue())
+
     finally:
         w.close()
         wo.close()
+
+        output.close()
+        fo.write(output.getvalue())
 
         f.close()
         fo.close()
