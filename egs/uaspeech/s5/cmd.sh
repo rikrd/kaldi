@@ -12,6 +12,7 @@ export train_cmd="run.pl"
 export decode_cmd="run.pl"
 export cuda_cmd="run.pl"
 export parallel_opts=""
+export jq_cmd="jq"
 
 fullhost=`hostname -f`
 
@@ -23,4 +24,13 @@ if [[ ${fullhost} == *"iceberg.shef.ac.uk" ]]; then
   export decode_cmd="queue.pl"
   export cuda_cmd="queue.pl --gpu=1"
   export parallel_opts="-pe openmp 4"
+  export jq_cmd="local/jq-linux64"
+
+elif [[ ${fullhost} == *"honeydukes.windows.shef.ac.uk" ]]; then
+  export train_cmd="run.pl"
+  export decode_cmd="run.pl"
+  export cuda_cmd="run.pl"
+  export parallel_opts=""
+  export jq_cmd="jq-osx-amd64"
+
 fi

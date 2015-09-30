@@ -40,7 +40,6 @@ if [ ${stage} -le 0 ]; then
   utils/prepare_lang.sh ${REC_ROOT}/tmp/dict "<UNK>" ${REC_ROOT}/tmp/lang ${REC_ROOT}/data/lang || exit 1
 
   local/prepare_lm_anyword.py ${REC_ROOT}/data/lang ${REC_ROOT}/data/lang/words.txt ${REC_ROOT}/data/lang_largevocab_test || exit 1
-
 fi
 
 
