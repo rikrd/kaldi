@@ -51,6 +51,7 @@ if [ ${stage} -le 3 ]; then
 
   steps/decode_fmllr.sh --nj ${decode_nj} --cmd "$decode_cmd" \
     --num-threads 4 --parallel-opts "${parallel_opts}" \
+    --scoring-opts "--min-lmwt 0 --max-lmwt 0" \
     ${dir}/exp/tri1/graph_largevocab ${dir}/test ${dir}/exp/tri1/decode_largevocab_test || exit 1
 fi
 
@@ -76,11 +77,13 @@ if [ ${stage} -le 3 ]; then
 
   steps/decode_fmllr.sh --nj ${decode_nj} --cmd "$decode_cmd" \
     --num-threads 4 --parallel-opts "${parallel_opts}" \
+    --scoring-opts "--min-lmwt 0 --max-lmwt 0" \
     ${dir}/exp/tri3b/graph_largevocab ${dir}/test ${dir}/exp/tri3b/decode_largevocab_test || exit 1
 
   utils/mkgraph.sh ${REC_ROOT}/data/lang_largevocab_test ${dir}/exp/tri3b ${dir}/exp/tri3b/graph_largevocab || exit 1;
 
   steps/decode_fmllr.sh --nj ${decode_nj} --cmd "$decode_cmd" \
     --num-threads 4 --parallel-opts "${parallel_opts}" \
+    --scoring-opts "--min-lmwt 0 --max-lmwt 0" \
     ${dir}/exp/tri3b/graph_largevocab ${dir}/test ${dir}/exp/tri3b/decode_largevocab_test || exit 1
 fi
