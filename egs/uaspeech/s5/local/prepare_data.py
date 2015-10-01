@@ -140,10 +140,7 @@ def main():
     with open(args['<data_json>']) as f:
         dataset = json.load(f)
 
-    # Split the dataset in train, dev and test
-    utterance_sets = split_train_test(dataset['utterances'],
-                                      train_selection=lambda x: x['block'] in {'1', '2'},
-                                      test_selection=lambda x: x['block'] in {'3'})
+    utterance_sets = {'mfcc_data_full': [utt_id for utt_id in dataset['utterances'].iterkeys()]}
 
     # Create the data files needed by kaldi (text, utt2spk, segments, ...)
     data_dirs = prepare_kaldi_data(dataset, utterance_sets, output_root)
