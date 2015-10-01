@@ -26,7 +26,9 @@ feature_maker=steps/make_mfcc.sh
 
 mkdir -p ${REC_ROOT}
 
-for speaker in `${jq_cmd} -r '.speakers | with_entries(select(.value.type!="control")) | keys[]' ${REC_ROOT}/tmp/uaspeech.json`; do
+dysarthric_speakers=`${jq_cmd} -r '.speakers | with_entries(select(.value.type!="control")) | keys[]' ${REC_ROOT}/tmp/uaspeech.json`
+
+for speaker in ${dysarthric_speakers}; do
     echo "Processing speaker $speaker ..."
     local/run_split.sh --feature $feature --jq-args "--arg speaker $speaker" \
       '.speakers as $speakers | .utterances[] | select($speakers[.speaker].type!="control" and .speaker!=$speaker) | .utterance_id' \
