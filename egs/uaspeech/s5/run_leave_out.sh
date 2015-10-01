@@ -26,8 +26,11 @@ feature_maker=steps/make_mfcc.sh
 
 mkdir -p ${REC_ROOT}
 
-local/run_split.sh --feature $feature \
-  '.speakers as $speakers | .utterances[] | select($speakers[.speaker].type!="control" and .speaker!="M04") | .utterance_id' \
-  '.speakers as $speakers | .utterances[] | select($speakers[.speaker].type!="control" and .speaker=="M04" and .block!="2") | .utterance_id' \
-  '.speakers as $speakers | .utterances[] | select($speakers[.speaker].type!="control" and .speaker=="M04" and .block=="2") | .utterance_id' \
-   ${REC_ROOT}/leave_one_out_M04
+for speaker in `${jq_cmd} -r '.speakers as $speakers | .{} | select(.type!="control") | keys[]' ${REC_ROOT}/tmp/uaspeech.json`; do
+    echo "Processing speaker $speaker ..."
+    local/run_split.sh --feature $feature --jq-args "--arg speaker $speaker" \
+      '.speakers as $speakers | .utterances[] | select($speakers[.speaker].type!="control" and .speaker!=$speaker) | .utterance_id' \
+      '.speakers as $speakers | .utterances[] | select($speakers[.speaker].type!="control" and .speaker==$speaker and .block!="2") | .utterance_id' \
+      '.speakers as $speakers | .utterances[] | select($speakers[.speaker].type!="control" and .speaker==$speaker and .block=="2") | .utterance_id' \
+       ${REC_ROOT}/leave_one_out_$speaker
+done

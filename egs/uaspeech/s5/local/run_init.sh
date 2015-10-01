@@ -58,4 +58,6 @@ if [ ${stage} -le 1 ]; then
   ${feature_maker} --nj $nj --cmd "$train_cmd" $dir $dir/log $dir/data || exit 1
 
   steps/compute_cmvn_stats.sh $dir $dir/log $dir/data || exit 1
+
+  utils/fix_data_dir.sh $dir || exit 1
 fi

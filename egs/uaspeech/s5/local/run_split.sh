@@ -16,6 +16,7 @@ script_path=`dirname $0`
 . ${script_path}/../path.sh
 
 feature=mfcc
+jq_args=
 
 . ${script_path}/../utils/parse_options.sh # accept options
 
@@ -33,9 +34,9 @@ dir=$4
 
 mkdir -p $dir
 
-${jq_cmd} -r "${train_filter}" ${REC_ROOT}/tmp/uaspeech.json > ${dir}/train_filter
-${jq_cmd} -r "${adapt_filter}" ${REC_ROOT}/tmp/uaspeech.json > ${dir}/adapt_filter
-${jq_cmd} -r "${test_filter}" ${REC_ROOT}/tmp/uaspeech.json > ${dir}/test_filter
+${jq_cmd} ${jq_args} -r "${train_filter}" ${REC_ROOT}/tmp/uaspeech.json > ${dir}/train_filter
+${jq_cmd} ${jq_args} -r "${adapt_filter}" ${REC_ROOT}/tmp/uaspeech.json > ${dir}/adapt_filter
+${jq_cmd} ${jq_args} -r "${test_filter}" ${REC_ROOT}/tmp/uaspeech.json > ${dir}/test_filter
 
 src_dir=${REC_ROOT}/data/${feature}_data_full
 
