@@ -24,7 +24,7 @@ feature_maker=steps/make_mfcc.sh
 
 . utils/parse_options.sh # accept options
 
-mkdir -p ${REC_ROOT}
+mkdir -p ${REC_ROOT}/leave_one_out
 
 dysarthric_speakers=`${jq_cmd} -r '.speakers | with_entries(select(.value.type!="control")) | keys[]' ${REC_ROOT}/tmp/uaspeech.json`
 
@@ -34,5 +34,5 @@ for speaker in ${dysarthric_speakers}; do
       '.speakers as $speakers | .utterances[] | select($speakers[.speaker].type!="control" and .speaker!=$speaker) | .utterance_id' \
       '.speakers as $speakers | .utterances[] | select($speakers[.speaker].type!="control" and .speaker==$speaker and .block!="2") | .utterance_id' \
       '.speakers as $speakers | .utterances[] | select($speakers[.speaker].type!="control" and .speaker==$speaker and .block=="2") | .utterance_id' \
-       ${REC_ROOT}/leave_one_out_$speaker
+       ${REC_ROOT}/leave_one_out/$speaker
 done
