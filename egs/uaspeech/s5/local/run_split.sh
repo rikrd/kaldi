@@ -33,12 +33,12 @@ dir=$4
 
 mkdir -p $dir
 
-echo ${jq_cmd} -r '${train_filter}' ${REC_ROOT}/tmp/uaspeech.json > ${dir}/train_filter
-echo ${jq_cmd} -r '${adapt_filter}' ${REC_ROOT}/tmp/uaspeech.json > ${dir}/adapt_filter
-echo ${jq_cmd} -r '${test_filter}' ${REC_ROOT}/tmp/uaspeech.json > ${dir}/test_filter
+${jq_cmd} -r "${train_filter}" ${REC_ROOT}/tmp/uaspeech.json > ${dir}/train_filter
+${jq_cmd} -r "${adapt_filter}" ${REC_ROOT}/tmp/uaspeech.json > ${dir}/adapt_filter
+${jq_cmd} -r "${test_filter}" ${REC_ROOT}/tmp/uaspeech.json > ${dir}/test_filter
 
 src_dir=${REC_ROOT}/data/${feature}_data_full
 
-. ${script_path}/../utils/reduce_data_dir_by_reclist.sh ${src_dir} ${dir}/train_filter ${dir}/train
-. ${script_path}/../utils/reduce_data_dir_by_reclist.sh ${src_dir} ${dir}/adapt_filter ${dir}/adapt
-. ${script_path}/../utils/reduce_data_dir_by_reclist.sh ${src_dir} ${dir}/test_filter ${dir}/test
+. ${script_path}/../local/reduce_data_dir_by_reclist.sh ${src_dir} ${dir}/train_filter ${dir}/train
+. ${script_path}/../local/reduce_data_dir_by_reclist.sh ${src_dir} ${dir}/adapt_filter ${dir}/adapt
+. ${script_path}/../local/reduce_data_dir_by_reclist.sh ${src_dir} ${dir}/test_filter ${dir}/test
