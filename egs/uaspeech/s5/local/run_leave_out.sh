@@ -8,14 +8,16 @@
 # Apache 2.0
 #
 
-. cmd.sh
-. path.sh
+script_path=`dirname $0`
+
+. ${script_path}/../cmd.sh
+. ${script_path}/../path.sh
 
 overwrite=false
 feature=mfcc
 max_count=
 
-. utils/parse_options.sh # accept options
+. ${script_path}/../utils/parse_options.sh # accept options
 
 mkdir -p ${REC_ROOT}/leave_one_out
 
