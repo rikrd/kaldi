@@ -42,7 +42,7 @@ struct FbankOptions {
   bool raw_energy;  // If true, compute energy before preemphasis and windowing
   bool htk_compat;  // If true, put energy last (if using energy)
   bool use_log_fbank;  // if true (default), produce log-filterbank, else linear
-  
+
   FbankOptions(): mel_opts(23),
                  // defaults the #mel-banks to 23 for the FBANK computations.
                  // this seems to be common for 16khz-sampled data,
@@ -53,20 +53,20 @@ struct FbankOptions {
                  htk_compat(false),
                  use_log_fbank(true) {}
 
-  void Register(OptionsItf *po) {
-    frame_opts.Register(po);
-    mel_opts.Register(po);
-    po->Register("use-energy", &use_energy,
-                 "Add an extra dimension with energy to the FBANK output.");
-    po->Register("energy-floor", &energy_floor,
-                 "Floor on energy (absolute, not relative) in FBANK computation");
-    po->Register("raw-energy", &raw_energy,
-                 "If true, compute energy before preemphasis and windowing");
-    po->Register("htk-compat", &htk_compat, "If true, put energy last.  "
-                 "Warning: not sufficient to get HTK compatible features (need "
-                 "to change other parameters).");
-    po->Register("use-log-fbank", &use_log_fbank,
-                 "If true, produce log-filterbank, else produce linear.");
+  void Register(OptionsItf *opts) {
+    frame_opts.Register(opts);
+    mel_opts.Register(opts);
+    opts->Register("use-energy", &use_energy,
+                   "Add an extra dimension with energy to the FBANK output.");
+    opts->Register("energy-floor", &energy_floor,
+                   "Floor on energy (absolute, not relative) in FBANK computation");
+    opts->Register("raw-energy", &raw_energy,
+                   "If true, compute energy before preemphasis and windowing");
+    opts->Register("htk-compat", &htk_compat, "If true, put energy last.  "
+                   "Warning: not sufficient to get HTK compatible features (need "
+                   "to change other parameters).");
+    opts->Register("use-log-fbank", &use_log_fbank,
+                   "If true, produce log-filterbank, else produce linear.");
   }
 };
 
@@ -92,7 +92,7 @@ class Fbank {
                BaseFloat vtln_warp,
                Matrix<BaseFloat> *output,
                Vector<BaseFloat> *wave_remainder = NULL);
-  
+
   /// Const version of Compute()
   void Compute(const VectorBase<BaseFloat> &wave,
                BaseFloat vtln_warp,
@@ -104,7 +104,7 @@ class Fbank {
                        const MelBanks &mel_banks,
                        Matrix<BaseFloat> *output,
                        Vector<BaseFloat> *wave_remainder = NULL) const;
-  
+
   const MelBanks *GetMelBanks(BaseFloat vtln_warp);
 
   const MelBanks *GetMelBanks(BaseFloat vtln_warp,

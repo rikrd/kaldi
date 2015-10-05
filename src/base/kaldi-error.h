@@ -27,12 +27,13 @@
 #include <sstream>
 #include <cstdio>
 
-#ifdef _MSC_VER
-#define NOEXCEPT(Predicate)
-#elif __cplusplus > 199711L || defined(__GXX_EXPERIMENTAL_CXX0X__)
-#define NOEXCEPT(Predicate) noexcept((Predicate))
+#if _MSC_VER >= 1900 || (!defined(_MSC_VER) && __cplusplus >= 201103L)
+#define KALDI_NOEXCEPT(Predicate) noexcept((Predicate))
+#elif defined(__GXX_EXPERIMENTAL_CXX0X__) && \
+  (__GNUC__ >= 4 && __GNUC_MINOR__ >= 6)
+#define KALDI_NOEXCEPT(Predicate) noexcept((Predicate))
 #else
-#define NOEXCEPT(Predicate)
+#define KALDI_NOEXCEPT(Predicate)
 #endif
 
 #include "base/kaldi-types.h"
@@ -70,21 +71,21 @@ inline void SetVerboseLevel(int32 i) { g_kaldi_verbose_level = i; }
 // class KaldiWarnMessage is invoked from the KALDI_WARN macro.
 class KaldiWarnMessage {
  public:
-  inline std::ostream &stream() { return ss; }
+  inline std::ostream &stream() { return ss_; }
   KaldiWarnMessage(const char *func, const char *file, int32 line);
-  ~KaldiWarnMessage()  { fprintf(stderr, "%s\n", ss.str().c_str()); }
+  ~KaldiWarnMessage();
  private:
-  std::ostringstream ss;
+  std::ostringstream ss_;
 };
 
 // class KaldiLogMessage is invoked from the KALDI_LOG macro.
 class KaldiLogMessage {
  public:
-  inline std::ostream &stream() { return ss; }
+  inline std::ostream &stream() { return ss_; }
   KaldiLogMessage(const char *func, const char *file, int32 line);
-  ~KaldiLogMessage() { fprintf(stderr, "%s\n", ss.str().c_str()); }
+  ~KaldiLogMessage();
  private:
-  std::ostringstream ss;
+  std::ostringstream ss_;
 };
 
 // Class KaldiVlogMessage is invoked from the KALDI_VLOG macro.
@@ -92,10 +93,10 @@ class KaldiVlogMessage {
  public:
   KaldiVlogMessage(const char *func, const char *file, int32 line,
                    int32 verbose_level);
-  inline std::ostream &stream() { return ss; }
-  ~KaldiVlogMessage() { fprintf(stderr, "%s\n", ss.str().c_str()); }
+  inline std::ostream &stream() { return ss_; }
+  ~KaldiVlogMessage() { fprintf(stderr, "%s\n", ss_.str().c_str()); }
  private:
-  std::ostringstream ss;
+  std::ostringstream ss_;
 };
 
 
@@ -104,10 +105,10 @@ class KaldiVlogMessage {
 class KaldiErrorMessage {
  public:
   KaldiErrorMessage(const char *func, const char *file, int32 line);
-  inline std::ostream &stream() { return ss; }
-  ~KaldiErrorMessage() NOEXCEPT(false);  // defined in kaldi-error.cc
+  inline std::ostream &stream() { return ss_; }
+  ~KaldiErrorMessage() KALDI_NOEXCEPT(false);  // defined in kaldi-error.cc
  private:
-  std::ostringstream ss;
+  std::ostringstream ss_;
 };
 
 
@@ -116,9 +117,30 @@ class KaldiErrorMessage {
 #define __func__ __FUNCTION__
 #endif
 
+// Note on KALDI_ASSERT and KALDI_PARANOID_ASSERT
+// The original (simple) version of the code was this
+//
+// #define KALDI_ASSERT(cond) if (!(cond)) kaldi::KaldiAssertFailure_(__func__, __FILE__, __LINE__, #cond);
+//
+// That worked well, but we were concerned that it
+// could potentially cause a performance issue due to failed branch
+// prediction (best practice is to have the if branch be the commonly
+// taken one).
+// Therefore, we decided to move the call into the else{} branch.
+// A single block {} around if /else  does not work, because it causes
+// syntax error (unmatched else block) in the following code:
+//
+// if (condition)
+//   KALDI_ASSERT(condition2);
+// else
+//   SomethingElse();
+//
+// do {} while(0)  -- note there is no semicolon at the end! --- works nicely
+// and compilers will be able to optimize the loop away (as the condition
+// is always false).
 #ifndef NDEBUG
 #define KALDI_ASSERT(cond) \
-  if (!(cond)) kaldi::KaldiAssertFailure_(__func__, __FILE__, __LINE__, #cond);
+  do { if ((cond)) ; else kaldi::KaldiAssertFailure_(__func__, __FILE__, __LINE__, #cond);} while(0)
 #else
 #define KALDI_ASSERT(cond)
 #endif
@@ -127,13 +149,14 @@ class KaldiErrorMessage {
 // also defined there.
 #ifdef KALDI_PARANOID // some more expensive asserts only checked if this defined
 #define KALDI_PARANOID_ASSERT(cond) \
-  if (!(cond)) kaldi::KaldiAssertFailure_(__func__, __FILE__, __LINE__, #cond);
+  do { if ((cond)) ; else kaldi::KaldiAssertFailure_(__func__, __FILE__, __LINE__, #cond);} while(0)
 #else
 #define KALDI_PARANOID_ASSERT(cond)
 #endif
 
-#define KALDI_ERR kaldi::KaldiErrorMessage(__func__, __FILE__, __LINE__).stream() 
-#define KALDI_WARN kaldi::KaldiWarnMessage(__func__, __FILE__, __LINE__).stream() 
+
+#define KALDI_ERR kaldi::KaldiErrorMessage(__func__, __FILE__, __LINE__).stream()
+#define KALDI_WARN kaldi::KaldiWarnMessage(__func__, __FILE__, __LINE__).stream()
 #define KALDI_LOG kaldi::KaldiLogMessage(__func__, __FILE__, __LINE__).stream()
 
 #define KALDI_VLOG(v) if (v <= kaldi::g_kaldi_verbose_level)     \

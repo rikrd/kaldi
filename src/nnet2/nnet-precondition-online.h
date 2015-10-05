@@ -460,11 +460,11 @@ class OnlinePreconditioner {
   
   // The "R" pointer is both the input (R in the comment) and the output (P in
   // the comment; equal to the preconditioned directions before scaling by
-  // gamma).  If the pointer "rprod" is supplied, it's set to the inner product
-  // of each row of the preconditioned directions P, at output, with itself.
-  // You would need to apply "scale" to R and "scale * scale" to row_prod, to
-  // get the preconditioned directions; we don't do this ourselves, in order to
-  // save CUDA calls.
+  // gamma).  If the pointer "row_prod" is supplied, it's set to the inner
+  // product of each row of the preconditioned directions P, at output, with
+  // itself.  You would need to apply "scale" to R and "scale * scale" to
+  // row_prod, to get the preconditioned directions; we don't do this ourselves,
+  // in order to save CUDA calls.
   void PreconditionDirections(CuMatrixBase<BaseFloat> *R,
                               CuVectorBase<BaseFloat> *row_prod,
                               BaseFloat *scale);
@@ -593,7 +593,7 @@ class OnlinePreconditioner {
   This function finds the approximate top eigenvectors and eigenvalues of S = beta M
   M^T (if trans == kNoTrans) or S = beta M^T M (if trans == kTrans).
   Each row p of P will be set to an approximate
-  eigenvector of M, and the corresponding value in s will exactly equal p^T S p.
+  eigenvector of S, and the corresponding value in s will exactly equal p^T S p.
   (note: it will actually be those with the largest absolute value that we return,
   which makes a difference only if S has negative eigenvalues).
   We do the eigenvalue computation on the CPU, mainly to avoid the hassle of

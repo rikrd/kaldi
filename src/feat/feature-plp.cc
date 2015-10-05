@@ -34,7 +34,7 @@ Plp::Plp(const PlpOptions &opts)
                 &idft_bases_);
 
   if (opts.energy_floor > 0.0)
-    log_energy_floor_ = log(opts.energy_floor);
+    log_energy_floor_ = Log(opts.energy_floor);
 
   int32 padded_window_size = opts.frame_opts.PaddedWindowSize();
   if ((padded_window_size & (padded_window_size-1)) == 0)  // Is a power of two...
@@ -58,8 +58,7 @@ Plp::~Plp() {
       ++iter)
     delete iter->second;
 
-  if (srfft_ != NULL)
-    delete srfft_;
+   delete srfft_;
 }
 
 const MelBanks *Plp::GetMelBanks(BaseFloat vtln_warp) {
@@ -168,7 +167,8 @@ void Plp::ComputeInternal(const VectorBase<BaseFloat> &wave,
       cols_out = opts_.num_ceps;
   if (rows_out == 0) {
     output->Resize(0, 0);
-    *wave_remainder = wave;
+    if (wave_remainder != NULL)
+      *wave_remainder = wave;
     return;
   }
   output->Resize(rows_out, cols_out);
@@ -193,7 +193,7 @@ void Plp::ComputeInternal(const VectorBase<BaseFloat> &wave,
                   (opts_.use_energy && opts_.raw_energy ? &log_energy : NULL));
 
     if (opts_.use_energy && !opts_.raw_energy)
-      log_energy = log(std::max(VecVec(window, window),
+      log_energy = Log(std::max(VecVec(window, window),
                                 std::numeric_limits<BaseFloat>::min()));
 
     if (srfft_ != NULL)  // Compute FFT using split-radix algorithm.

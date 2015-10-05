@@ -18,6 +18,7 @@ acwt=0.083333 # note: only really affects pruning (scoring is on lattices).
 extra_beam=0.0 # small additional beam over varying beam
 max_beam=100.0 # maximum of varying beam
 scoring_opts=
+skip_scoring=false
 # End configuration section.
 
 echo "$0 $@"  # Print the command line for logging
@@ -74,9 +75,10 @@ echo "decode_fwdbwd.sh: feature type is $feat_type";
 
 splice_opts=`cat $srcdir/splice_opts 2>/dev/null`
 cmvn_opts=`cat $srcdir/cmvn_opts 2>/dev/null`
+delta_opts=`cat $srcdir/delta_opts 2>/dev/null`
 
 case $feat_type in
-  delta) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas ark:- ark:- |";;
+  delta) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | add-deltas $delta_opts ark:- ark:- |";;
   lda) feats="ark,s,cs:apply-cmvn $cmvn_opts --utt2spk=ark:$sdata/JOB/utt2spk scp:$sdata/JOB/cmvn.scp scp:$sdata/JOB/feats.scp ark:- | splice-feats $splice_opts ark:- ark:- | transform-feats $srcdir/final.mat ark:- ark:- |";;
   *) echo "Invalid feature type $feat_type" && exit 1;
 esac
@@ -119,9 +121,12 @@ else
      $model $graphdir/HCLG.fst "$feats" "ark:|gzip -c > $dir/lat.JOB.gz" || exit 1;
 fi
 
-[ ! -x local/score.sh ] && \
-  echo "Not scoring because local/score.sh does not exist or not executable." && exit 1;
-local/score.sh $scoring_opts --cmd "$cmd" --reverse $reverse $scoring_opts $data $graphdir $dir
+if ! $skip_scoring ; then
+  [ ! -x local/score.sh ] && \
+    echo "Not scoring because local/score.sh does not exist or not executable." && exit 1;
+  local/score.sh $scoring_opts --cmd "$cmd" --reverse $reverse $scoring_opts $data $graphdir $dir  ||
+    { echo "$0: Scoring failed. (ignore by '--skip-scoring true')"; exit 1; }
+fi
 
 echo "Decoding done."
 exit 0;

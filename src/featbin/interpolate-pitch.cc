@@ -35,19 +35,19 @@ struct PitchInterpolatorOptions {
                               interpolator_factor(1.0e-05),
                               max_voicing_prob(0.9),
                               max_pitch_change_per_frame(10.0) { }
-  void Register(OptionsItf *po) {
-    po->Register("pitch-interval", &pitch_interval, "Frequency interval in Hz, used "
-                 "for the pitch interpolation and smoothing algorithm.");
-    po->Register("interpolator-factor", &interpolator_factor, "Factor affecting the "
-                 "interpolation algorithm; setting it closer to zero will cause "
-                 "it to follow the measured pitch more faithfully but less "
-                 "smoothly");
-    po->Register("max-voicing-prob", &max_voicing_prob, "Probability of voicing the "
-                 "algorithm uses as the observed p(voicing) approaches 1; having "
-                 "value <1 allows it to interpolate even if p(voicing) = 1");
-    po->Register("max-pitch-change-per-frame", &max_pitch_change_per_frame, 
-                 "This value should be set large enough to no longer affect the "
-                 "results, but the larger it is the slower the algorithm will be.");
+  void Register(OptionsItf *opts) {
+    opts->Register("pitch-interval", &pitch_interval, "Frequency interval in Hz, used "
+                   "for the pitch interpolation and smoothing algorithm.");
+    opts->Register("interpolator-factor", &interpolator_factor, "Factor affecting the "
+                   "interpolation algorithm; setting it closer to zero will cause "
+                   "it to follow the measured pitch more faithfully but less "
+                   "smoothly");
+    opts->Register("max-voicing-prob", &max_voicing_prob, "Probability of voicing the "
+                   "algorithm uses as the observed p(voicing) approaches 1; having "
+                   "value <1 allows it to interpolate even if p(voicing) = 1");
+    opts->Register("max-pitch-change-per-frame", &max_pitch_change_per_frame, 
+                   "This value should be set large enough to no longer affect the "
+                   "results, but the larger it is the slower the algorithm will be.");
   }
   void Check() const {
     KALDI_ASSERT(pitch_interval > 0.0 && pitch_interval < 20.0 &&
@@ -139,8 +139,8 @@ class PitchInterpolator {
     BaseFloat constant_prob = (1.0 - p_voicing_[t]) * opts_.interpolator_factor,
         specified_prob = p_voicing_[t] + constant_prob;
     // specified_prob adds in the extra probability mass at the observed pitch value.
-    BaseFloat log_constant_prob = log(constant_prob),
-        log_ratio = log(specified_prob / constant_prob);
+    BaseFloat log_constant_prob = Log(constant_prob),
+        log_ratio = Log(specified_prob / constant_prob);
     log_alpha_.Add(log_constant_prob); // add log_constant_prob to all pitches at this time.
     
     log_alpha_(pitch_[t]) += log_ratio; // corrects this to be like adding
@@ -301,26 +301,26 @@ int main(int argc, char *argv[]) {
 
     
     // construct all the global objects
-    ParseOptions po(usage);
+    ParseOptions opts(usage);
 
     bool linear_interpolation = false;
     PitchInterpolatorOptions interpolate_opts;
     
-    po.Register("linear-interpolation",
+    opts.Register("linear-interpolation",
                 &linear_interpolation, "If true, just do simple linear "
                 "interpolation across gaps (else, model-based)");
-    interpolate_opts.Register(&po);
+    interpolate_opts.Register(&opts);
     
     // parse options (+filling the registered variables)
-    po.Read(argc, argv);
+    opts.Read(argc, argv);
 
-    if (po.NumArgs() != 2) {
-      po.PrintUsage();
+    if (opts.NumArgs() != 2) {
+      opts.PrintUsage();
       exit(1);
     }
     
-    std::string input_rspecifier = po.GetArg(1);
-    std::string output_wspecifier = po.GetArg(2);
+    std::string input_rspecifier = opts.GetArg(1);
+    std::string output_wspecifier = opts.GetArg(2);
 
     SequentialBaseFloatMatrixReader reader(input_rspecifier);
     BaseFloatMatrixWriter kaldi_writer;  // typedef to TableWriter<something>.

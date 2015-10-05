@@ -2,6 +2,8 @@
 
 // Copyright 2013  Brno University of Technology (Author: Karel Vesely)
 
+// See ../../COPYING for clarification regarding multiple authors
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -129,6 +131,16 @@ int main(int argc, char *argv[]) {
     Xent xent;
     Mse mse;
     
+    MultiTaskLoss multitask;
+    if (0 == objective_function.compare(0,9,"multitask")) {
+      // objective_function contains something like : 
+      // 'multitask,xent,2456,1.0,mse,440,0.001'
+      //
+      // the meaning is following:
+      // 'multitask,<type1>,<dim1>,<weight1>,...,<typeN>,<dimN>,<weightN>'
+      multitask.InitFromString(objective_function);
+    }
+    
     CuMatrix<BaseFloat> feats_transf, nnet_out, obj_diff;
 
     Timer time;
@@ -236,6 +248,9 @@ int main(int argc, char *argv[]) {
         } else if (objective_function == "mse") {
           // gradients re-scaled by weights in Eval,
           mse.Eval(frm_weights, nnet_out, nnet_tgt, &obj_diff);
+        } else if (0 == objective_function.compare(0,9,"multitask")) {
+          // gradients re-scaled by weights in Eval,
+          multitask.Eval(frm_weights, nnet_out, nnet_tgt, &obj_diff);
         } else {
           KALDI_ERR << "Unknown objective function code : " << objective_function;
         }
@@ -297,6 +312,8 @@ int main(int argc, char *argv[]) {
       KALDI_LOG << xent.Report();
     } else if (objective_function == "mse") {
       KALDI_LOG << mse.Report();
+    } else if (0 == objective_function.compare(0,9,"multitask")) {
+      KALDI_LOG << multitask.Report();
     } else {
       KALDI_ERR << "Unknown objective function code : " << objective_function;
     }

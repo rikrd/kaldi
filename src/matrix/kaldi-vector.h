@@ -5,6 +5,7 @@
 //                       Ariya Rastrow;  Petr Schwarz;  Yanmin Qian;
 //                       Karel Vesely;  Go Vivace Inc.;  Arnab Ghoshal
 //                       Wei Shi;
+//                2015   Guoguo Chen
 
 // See ../../COPYING for clarification regarding multiple authors
 //
@@ -105,6 +106,10 @@ class VectorBase {
   /// Copy data from a SpMatrix or TpMatrix (must match own size).
   template<typename OtherReal>
   void CopyFromPacked(const PackedMatrix<OtherReal> &M);
+
+  /// Copy data from a SparseMatrix.
+  template<typename OtherReal>
+  void CopyFromSmat(const SparseMatrix<OtherReal> &M);
   
   /// Copy data from another vector of different type (double vs. float)
   template<typename OtherReal>
@@ -141,6 +146,11 @@ class VectorBase {
   /// Apply soft-max to vector and return normalizer (log sum of exponentials).
   /// This is the same as: \f$ x(i) = exp(x(i)) / \sum_i exp(x(i)) \f$
   Real ApplySoftMax();
+
+  /// Applies log soft-max to vector and returns normalizer (log sum of
+  /// exponentials).
+  /// This is the same as: \f$ x(i) = x(i) - log(\sum_i exp(x(i))) \f$
+  Real ApplyLogSoftMax();
 
   /// Sets each element of *this to the tanh of the corresponding element of "src".
   void Tanh(const VectorBase<Real> &src);
@@ -408,6 +418,12 @@ class Vector: public VectorBase<Real> {
   explicit Vector(const VectorBase<OtherReal> &v): VectorBase<Real>() {
     Resize(v.Dim(), kUndefined);
     this->CopyFromVec(v);
+  }
+
+  template<typename OtherReal>
+  explicit Vector(const SparseMatrix<OtherReal> &smat) : VectorBase<Real>() {
+    Resize(smat.NumElements(), kUndefined);
+    this->CopyFromSmat(smat);
   }
 
 // Took this out since it is unsafe : Arnab

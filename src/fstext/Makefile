@@ -13,11 +13,11 @@ include ../kaldi.mk
 TESTFILES = determinize-star-test \
       pre-determinize-test trivial-factor-weight-test \
       context-fst-test factor-test table-matcher-test fstext-utils-test \
-      remove-eps-local-test rescale-test lattice-weight-test  \
+      remove-eps-local-test lattice-weight-test  \
       determinize-lattice-test lattice-utils-test deterministic-fst-test \
       push-special-test epsilon-property-test prune-special-test
 
-OBJFILES = push-special.o
+OBJFILES = push-special.o kaldi-fst-io.o
 
 
 LIBNAME = kaldi-fstext

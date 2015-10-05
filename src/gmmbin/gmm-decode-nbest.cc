@@ -74,8 +74,7 @@ int main(int argc, char *argv[]) {
       "Note: this program was mainly intended to validate the lattice generation\n"
       "algorithm and is not very useful; in general, processing the\n"
       "lattices into n-best lists will be more efficient.\n"
-      "Usage:\n"
-      " gmm-decode-nbest [options] <model-in> <fst-in> <features-rspecifier> "
+      "Usage: gmm-decode-nbest [options] <model-in> <fst-in> <features-rspecifier> "
         "<nbest-lattice-wspecifier> <words-wspecifier> [<alignments-wspecifier>]\n";
     ParseOptions po(usage);
     bool allow_partial = true;
@@ -235,7 +234,7 @@ int main(int argc, char *argv[]) {
     KALDI_LOG << "Overall log-likelihood per frame is " << (tot_like/frame_count) << " over "
               << frame_count<<" frames.";
 
-    if (word_syms) delete word_syms;    
+    delete word_syms;    
     delete decode_fst;
     if (num_success != 0) return 0;
     else return 1;

@@ -6,6 +6,8 @@
 //                    Daniel Povey, Korbinian Riedhammer
 //                    Xin Lei
 
+// See ../../COPYING for clarification regarding multiple authors
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -291,7 +293,7 @@ static void UnitTestKeele() {
       wavefile = "keele/16kHz/"+num+".wav";
     }
     KALDI_LOG << "--- " << wavefile << " ---";
-    std::ifstream is(wavefile.c_str());
+    std::ifstream is(wavefile.c_str(), std::ios_base::binary);
     WaveData wave;
     wave.Read(is);
     KALDI_ASSERT(wave.Data().NumRows() == 1);
@@ -323,7 +325,7 @@ static void UnitTestPenaltyFactor() {
         wavefile = "keele/16kHz/"+num+".wav";
       }
       KALDI_LOG << "--- " << wavefile << " ---";
-      std::ifstream is(wavefile.c_str());
+      std::ifstream is(wavefile.c_str(), std::ios_base::binary);
       WaveData wave;
       wave.Read(is);
       KALDI_ASSERT(wave.Data().NumRows() == 1);
@@ -356,7 +358,7 @@ static void UnitTestKeeleNccfBallast() {
         wavefile = "keele/16kHz/"+num+".wav";
       }
       KALDI_LOG << "--- " << wavefile << " ---";
-      std::ifstream is(wavefile.c_str());
+      std::ifstream is(wavefile.c_str(), std::ios_base::binary);
       WaveData wave;
       wave.Read(is);
       KALDI_ASSERT(wave.Data().NumRows() == 1);
@@ -394,7 +396,7 @@ static void UnitTestPitchExtractionSpeed() {
       wavefile = "keele/16kHz/"+num+".wav";
     }
     KALDI_LOG << "--- " << wavefile << " ---";
-    std::ifstream is(wavefile.c_str());
+    std::ifstream is(wavefile.c_str(), std::ios_base::binary);
     WaveData wave;
     wave.Read(is);
     KALDI_ASSERT(wave.Data().NumRows() == 1);
@@ -427,7 +429,7 @@ static void UnitTestPitchExtractorCompareKeele() {
       wavefile = "keele/16kHz/"+num+".wav";
     }
     KALDI_LOG << "--- " << wavefile << " ---";
-    std::ifstream is(wavefile.c_str());
+    std::ifstream is(wavefile.c_str(), std::ios_base::binary);
     WaveData wave;
     wave.Read(is);
     KALDI_ASSERT(wave.Data().NumRows() == 1);
@@ -461,7 +463,7 @@ void UnitTestDiffSampleRate() {
       wavefile = "keele/"+samp_rate+"kHz/"+num+".wav";
     }
     KALDI_LOG << "--- " << wavefile << " ---";
-    std::ifstream is(wavefile.c_str());
+    std::ifstream is(wavefile.c_str(), std::ios_base::binary);
     WaveData wave;
     wave.Read(is);
     KALDI_ASSERT(wave.Data().NumRows() == 1);
@@ -485,7 +487,7 @@ void UnitTestProcess() {
       wavefile = "keele/16kHz/"+num+".wav";
     }
     KALDI_LOG << "--- " << wavefile << " ---";
-    std::ifstream is(wavefile.c_str());
+    std::ifstream is(wavefile.c_str(), std::ios_base::binary);
     WaveData wave;
     wave.Read(is);
     KALDI_ASSERT(wave.Data().NumRows() == 1);

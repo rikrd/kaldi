@@ -38,7 +38,7 @@ namespace nnet1 {
 template <typename T>
 inline void CountCorrectFramesWeighted(const CuArray<T> &v1, 
                                        const CuArray<T> &v2, 
-                                       const VectorBase<BaseFloat> &weights, 
+                                       const CuVectorBase<BaseFloat> &weights, 
                                        double *correct) {
   KALDI_ASSERT(v1.Dim() == v2.Dim());
   KALDI_ASSERT(v1.Dim() == weights.Dim());
@@ -47,10 +47,12 @@ inline void CountCorrectFramesWeighted(const CuArray<T> &v1,
   std::vector<T> v1_h(dim), v2_h(dim);
   v1.CopyToVec(&v1_h);
   v2.CopyToVec(&v2_h);
+  Vector<BaseFloat> w(dim);
+  weights.CopyToVec(&w);
   // Get correct frame count (weighted),
   double corr = 0.0;
   for (int32 i=0; i<dim; i++) {
-   corr += weights(i) * (v1_h[i] == v2_h[i] ? 1.0 : 0.0);
+   corr += w(i) * (v1_h[i] == v2_h[i] ? 1.0 : 0.0);
   }
   // Return,
   (*correct) = corr;
@@ -59,47 +61,56 @@ inline void CountCorrectFramesWeighted(const CuArray<T> &v1,
 
 void Xent::Eval(const VectorBase<BaseFloat> &frame_weights,
                 const CuMatrixBase<BaseFloat> &net_out, 
-                const CuMatrixBase<BaseFloat> &target, 
+                const CuMatrixBase<BaseFloat> &targets, 
                 CuMatrix<BaseFloat> *diff) {
   // check inputs,
-  KALDI_ASSERT(net_out.NumCols() == target.NumCols());
-  KALDI_ASSERT(net_out.NumRows() == target.NumRows());
+  KALDI_ASSERT(net_out.NumCols() == targets.NumCols());
+  KALDI_ASSERT(net_out.NumRows() == targets.NumRows());
   KALDI_ASSERT(net_out.NumRows() == frame_weights.Dim());
 
   KALDI_ASSERT(KALDI_ISFINITE(frame_weights.Sum()));
   KALDI_ASSERT(KALDI_ISFINITE(net_out.Sum()));
-  KALDI_ASSERT(KALDI_ISFINITE(target.Sum()));
-
-  double num_frames = frame_weights.Sum();
-  KALDI_ASSERT(num_frames >= 0.0)
+  KALDI_ASSERT(KALDI_ISFINITE(targets.Sum()));
 
   // get frame_weights to GPU,
   frame_weights_ = frame_weights;
 
+  // There may be frames for which the sum of targets is zero.
+  // This happens in multi-lingual training when the frame 
+  // has target class in the softmax of another language.
+  // We 'switch-off' such frames by masking the 'frame_weights_',
+  target_sum_.Resize(targets.NumRows());
+  target_sum_.AddColSumMat(1.0, targets, 0.0);
+  frame_weights_.MulElements(target_sum_);
+
+  // get the number of frames after the masking,
+  double num_frames = frame_weights_.Sum();
+  KALDI_ASSERT(num_frames >= 0.0);
+
   // compute derivative wrt. activations of last layer of neurons,
   *diff = net_out;
-  diff->AddMat(-1.0, target);
+  diff->AddMat(-1.0, targets);
   diff->MulRowsVec(frame_weights_); // weighting,
 
   // evaluate the frame-level classification,
   double correct; 
   net_out.FindRowMaxId(&max_id_out_); // find max in nn-output
-  target.FindRowMaxId(&max_id_tgt_); // find max in targets
-  CountCorrectFramesWeighted(max_id_out_, max_id_tgt_, frame_weights, &correct);
+  targets.FindRowMaxId(&max_id_tgt_); // find max in targets
+  CountCorrectFramesWeighted(max_id_out_, max_id_tgt_, frame_weights_, &correct);
 
   // calculate cross_entropy (in GPU),
   xentropy_aux_ = net_out; // y
   xentropy_aux_.Add(1e-20); // avoid log(0)
   xentropy_aux_.ApplyLog(); // log(y)
-  xentropy_aux_.MulElements(target); // t*log(y)
+  xentropy_aux_.MulElements(targets); // t*log(y)
   xentropy_aux_.MulRowsVec(frame_weights_); // w*t*log(y) 
   double cross_entropy = -xentropy_aux_.Sum();
   
   // caluculate entropy (in GPU),
-  entropy_aux_ = target; // t
+  entropy_aux_ = targets; // t
   entropy_aux_.Add(1e-20); // avoid log(0)
   entropy_aux_.ApplyLog(); // log(t)
-  entropy_aux_.MulElements(target); // t*log(t)
+  entropy_aux_.MulElements(targets); // t*log(t)
   entropy_aux_.MulRowsVec(frame_weights_); // w*t*log(t) 
   double entropy = -entropy_aux_.Sum();
 
@@ -152,15 +163,16 @@ void Xent::Eval(const VectorBase<BaseFloat> &frame_weights,
 std::string Xent::Report() {
   std::ostringstream oss;
   oss << "AvgLoss: " << (loss_-entropy_)/frames_ << " (Xent), "
-      << "[AvgXent: " << loss_/frames_ 
-      << ", AvgTargetEnt: " << entropy_/frames_ << "]" << std::endl;
+      << "[AvgXent " << loss_/frames_ 
+      << ", AvgTargetEnt " << entropy_/frames_ 
+      << ", frames " << frames_ << "]" << std::endl;
   if (loss_vec_.size() > 0) {
      oss << "progress: [";
      std::copy(loss_vec_.begin(),loss_vec_.end(),std::ostream_iterator<float>(oss," "));
      oss << "]" << std::endl;
   }
   if (correct_ >= 0.0) {
-    oss << "\nFRAME_ACCURACY >> " << 100.0*correct_/frames_ << "% <<";
+    oss << "FRAME_ACCURACY >> " << 100.0*correct_/frames_ << "% <<" << std::endl;
   }
   return oss.str(); 
 }
@@ -182,7 +194,7 @@ void Mse::Eval(const VectorBase<BaseFloat> &frame_weights,
   KALDI_ASSERT(KALDI_ISFINITE(target.Sum()));
 
   int32 num_frames = frame_weights.Sum();
-  KALDI_ASSERT(num_frames >= 0.0)
+  KALDI_ASSERT(num_frames >= 0.0);
 
   // get frame_weights to GPU,
   frame_weights_ = frame_weights;
@@ -246,13 +258,131 @@ std::string Mse::Report() {
   BaseFloat root_mean_square = sqrt(loss_/frames_/num_tgt);
   // build the message,
   std::ostringstream oss;
-  oss << "AvgLoss: " << loss_/frames_ << " (Mse), " << "[RMS " << root_mean_square << "]" << std::endl;
+  oss << "AvgLoss: " << loss_/frames_ << " (Mse), " 
+      << "[RMS " << root_mean_square << ", frames " << frames_ << "]" << std::endl;
   oss << "progress: [";
   std::copy(loss_vec_.begin(),loss_vec_.end(),std::ostream_iterator<float>(oss," "));
   oss << "]" << std::endl;
   return oss.str();
 }
 
+
+/* MultiTaskLoss */
+
+void MultiTaskLoss::InitFromString(const std::string& s) {
+  std::vector<std::string> v;
+  SplitStringToVector(s, ",:" /* delimiter */, false, &v);
+
+  KALDI_ASSERT((v.size()-1) % 3 == 0); // triplets,
+  KALDI_ASSERT(v[0] == "multitask"); // header,
+
+  // parse the definition of multitask loss,
+  std::vector<std::string>::iterator it(v.begin()+1); // skip header,
+  for ( ; it != v.end(); ++it) {
+    // type,
+    if (*it == "xent") {
+      loss_vec_.push_back(new Xent());
+    } else if (*it == "mse") {
+      loss_vec_.push_back(new Mse());
+    } else {
+      KALDI_ERR << "Unknown objective function code : " << *it;
+    }
+    ++it;
+    // dim,
+    int32 dim;
+    if (!ConvertStringToInteger(*it, &dim)) {
+      KALDI_ERR << "Cannot convert 'dim' " << *it << " to integer!";
+    }
+    loss_dim_.push_back(dim);
+    ++it;
+    // weight,
+    BaseFloat weight;
+    if (!ConvertStringToReal(*it, &weight)) {
+      KALDI_ERR << "Cannot convert 'weight' " << *it << " to integer!";
+    }
+    KALDI_ASSERT(weight >= 0.0);
+    loss_weights_.push_back(weight);
+  }
+
+  // build vector with starting-point offsets,
+  loss_dim_offset_.resize(loss_dim_.size()+1, 0); // 1st zero stays,
+  for (int32 i = 1; i <= loss_dim_.size(); i++) {
+    loss_dim_offset_[i] = loss_dim_offset_[i-1] + loss_dim_[i-1];
+  }
+
+  // sanity check,
+  KALDI_ASSERT(loss_vec_.size() > 0);
+  KALDI_ASSERT(loss_vec_.size() == loss_dim_.size());
+  KALDI_ASSERT(loss_vec_.size() == loss_weights_.size());
+}
+
+void MultiTaskLoss::Eval(const VectorBase<BaseFloat> &frame_weights, 
+            const CuMatrixBase<BaseFloat>& net_out, 
+            const Posterior& post,
+            CuMatrix<BaseFloat>* diff) {
+  int32 num_frames = net_out.NumRows(),
+    num_output = net_out.NumCols();
+  KALDI_ASSERT(num_frames == post.size());
+  KALDI_ASSERT(num_output == loss_dim_offset_.back()); // sum of loss-dims,
+
+  // convert posterior to matrix,
+  PosteriorToMatrix(post, num_output, &tgt_mat_);
+
+  // allocate diff matrix,
+  diff->Resize(num_frames, num_output);
+  
+  // call the vector of loss functions,
+  CuMatrix<BaseFloat> diff_aux;
+  for (int32 i = 0; i < loss_vec_.size(); i++) {
+    loss_vec_[i]->Eval(frame_weights, 
+      net_out.ColRange(loss_dim_offset_[i], loss_dim_[i]),
+      tgt_mat_.ColRange(loss_dim_offset_[i], loss_dim_[i]),
+      &diff_aux);
+    // Scale the gradients,
+    diff_aux.Scale(loss_weights_[i]);
+    // Copy to diff,
+    diff->ColRange(loss_dim_offset_[i], loss_dim_[i]).CopyFromMat(diff_aux);
+  }
+}
+
+std::string MultiTaskLoss::Report() {
+  // calculate overall loss (weighted),
+  BaseFloat overall_loss = AvgLoss();
+  // copy the loss-values into a vector,
+  std::vector<BaseFloat> loss_values;
+  for (int32 i = 0; i < loss_vec_.size(); i++) {
+    loss_values.push_back(loss_vec_[i]->AvgLoss());
+  }
+
+  // build the message,
+  std::ostringstream oss;
+  oss << "MultiTaskLoss, with " << loss_vec_.size() << " parallel loss functions." << std::endl;
+  // individual loss reports first,
+  for (int32 i = 0; i < loss_vec_.size(); i++) {
+    oss << "Loss " << i+1 << ", " << loss_vec_[i]->Report() << std::endl;
+  }
+
+  // overall loss is last,
+  oss << "Loss (OVERALL), " 
+      << "AvgLoss: " << overall_loss << " (MultiTaskLoss), "
+      << "weights " << loss_weights_ << ", "
+      << "values " << loss_values << std::endl;
+
+  return oss.str();
+}
+
+BaseFloat MultiTaskLoss::AvgLoss() {
+  BaseFloat ans(0.0);
+  for (int32 i = 0; i < loss_vec_.size(); i++) {
+    BaseFloat val = loss_weights_[i] * loss_vec_[i]->AvgLoss();
+    if(!KALDI_ISFINITE(val)) {
+      KALDI_WARN << "Loss " << i+1 << ", has bad objective function value '" << val << "', using 0.0 instead.";
+      val = 0.0;
+    }
+    ans += val;
+  }
+  return ans;
+}
 
 } // namespace nnet1
 } // namespace kaldi

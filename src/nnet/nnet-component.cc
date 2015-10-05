@@ -37,6 +37,7 @@
 #include "nnet/nnet-max-pooling-2d-component.h"
 
 #include "nnet/nnet-lstm-projected-streams.h"
+#include "nnet/nnet-blstm-projected-streams.h"
 
 #include "nnet/nnet-sentence-averaging-component.h"
 #include "nnet/nnet-frame-pooling-component.h"
@@ -53,11 +54,13 @@ const struct Component::key_value Component::kMarkerMap[] = {
   { Component::kConvolutionalComponent,"<ConvolutionalComponent>"},
   { Component::kConvolutional2DComponent,"<Convolutional2DComponent>"},
   { Component::kLstmProjectedStreams,"<LstmProjectedStreams>"},
+  { Component::kBLstmProjectedStreams,"<BLstmProjectedStreams>"},
   { Component::kSoftmax,"<Softmax>" },
   { Component::kBlockSoftmax,"<BlockSoftmax>" },
   { Component::kSigmoid,"<Sigmoid>" },
   { Component::kTanh,"<Tanh>" },
   { Component::kDropout,"<Dropout>" },
+  { Component::kLengthNormComponent,"<LengthNormComponent>" },
   { Component::kRbm,"<Rbm>" },
   { Component::kSplice,"<Splice>" },
   { Component::kCopy,"<Copy>" },
@@ -69,6 +72,7 @@ const struct Component::key_value Component::kMarkerMap[] = {
   { Component::kMaxPoolingComponent, "<MaxPoolingComponent>"},
   { Component::kMaxPooling2DComponent, "<MaxPooling2DComponent>"},
   { Component::kSentenceAveragingComponent,"<SentenceAveragingComponent>"},
+  { Component::kSimpleSentenceAveragingComponent,"<SimpleSentenceAveragingComponent>"},
   { Component::kFramePoolingComponent, "<FramePoolingComponent>"},
   { Component::kParallelComponent, "<ParallelComponent>"},
 };
@@ -117,6 +121,9 @@ Component* Component::NewComponentOfType(ComponentType comp_type,
     case Component::kLstmProjectedStreams :
       ans = new LstmProjectedStreams(input_dim, output_dim);
       break;
+    case Component::kBLstmProjectedStreams :
+      ans = new BLstmProjectedStreams(input_dim, output_dim);
+      break;
     case Component::kSoftmax :
       ans = new Softmax(input_dim, output_dim);
       break;
@@ -131,6 +138,9 @@ Component* Component::NewComponentOfType(ComponentType comp_type,
       break;
     case Component::kDropout :
       ans = new Dropout(input_dim, output_dim); 
+      break;
+    case Component::kLengthNormComponent :
+      ans = new LengthNormComponent(input_dim, output_dim); 
       break;
     case Component::kRbm :
       ans = new Rbm(input_dim, output_dim);
@@ -152,6 +162,9 @@ Component* Component::NewComponentOfType(ComponentType comp_type,
       break;
     case Component::kSentenceAveragingComponent :
       ans = new SentenceAveragingComponent(input_dim, output_dim);
+      break;
+    case Component::kSimpleSentenceAveragingComponent :
+      ans = new SimpleSentenceAveragingComponent(input_dim, output_dim);
       break;
     case Component::kAveragePoolingComponent :
       ans = new AveragePoolingComponent(input_dim, output_dim);

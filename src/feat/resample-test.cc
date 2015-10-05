@@ -5,6 +5,8 @@
 //              2014  Yanqing Sun, Junjie Wang
 //              2014  Johns Hopkins University (author: Daniel Povey)
 
+// See ../../COPYING for clarification regarding multiple authors
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -133,7 +135,7 @@ void UnitTestArbitraryResample() {
       if (num_zeros == 3) {
         KALDI_ASSERT(error < 0.1);
       } else {
-        KALDI_ASSERT(error < 0.02);
+        KALDI_ASSERT(error < 0.025);
       }
     } else {
       KALDI_VLOG(1) << "[not checking since out of bounds]";
@@ -225,7 +227,7 @@ void UnitTestLinearResample() {
 }
 
 void UnitTestLinearResample2() {
-  int32 num_samp = 100 + rand() % 100;
+  int32 num_samp = 150 + rand() % 100;
   BaseFloat samp_freq = 1000, resamp_freq = 4000;
 
   int32 num_zeros = 10; // fairly accurate.
@@ -257,7 +259,7 @@ void UnitTestLinearResample2() {
   linear_resampler2.Resample(signal_upsampled, true, &signal_downsampled);
 
 
-  int32 samp_discard = 20;  // Discard 20 samples for edge effects.
+  int32 samp_discard = 30;  // Discard 20 samples for edge effects.
   SubVector<BaseFloat> signal_middle(signal, samp_discard,
                                      signal.Dim() - (2 * samp_discard));
 

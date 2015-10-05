@@ -44,16 +44,16 @@ struct DecodableNnet2OnlineOptions {
       pad_input(true),
       max_nnet_batch_size(256) { }
 
-  void Register(OptionsItf *po) {
-    po->Register("acoustic-scale", &acoustic_scale,
-                 "Scaling factor for acoustic likelihoods");
-    po->Register("pad-input", &pad_input,
-                 "If true, pad acoustic features with required acoustic context "
-                 "past edges of file.");
-    po->Register("max-nnet-batch-size", &max_nnet_batch_size,
-                 "Maximum batch size we use in neural-network decodable object, "
-                 "in cases where we are not constrained by currently available "
-                 "frames (this will rarely make a difference)");
+  void Register(OptionsItf *opts) {
+    opts->Register("acoustic-scale", &acoustic_scale,
+                   "Scaling factor for acoustic likelihoods");
+    opts->Register("pad-input", &pad_input,
+                   "If true, pad acoustic features with required acoustic context "
+                   "past edges of file.");
+    opts->Register("max-nnet-batch-size", &max_nnet_batch_size,
+                   "Maximum batch size we use in neural-network decodable object, "
+                   "in cases where we are not constrained by currently available "
+                   "frames (this will rarely make a difference)");
                  
   }
 };
@@ -119,4 +119,4 @@ class DecodableNnet2Online: public DecodableInterface {
 } // namespace nnet2
 } // namespace kaldi
 
-#endif // KALDI_NNET2_ONLINE_GMM_DECODABLE_H_
+#endif // KALDI_NNET2_ONLINE_NNET2_DECODABLE_H_

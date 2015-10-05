@@ -68,7 +68,7 @@ class LmFstConverter {
   typedef fst::StdArc::Weight LmWeight;
   typedef fst::StdArc::StateId StateId;
   
-  typedef unordered_map<StateId, StateId> BkStateMap;
+  typedef unordered_map<StateId, StateId> BackoffStateMap;
   typedef unordered_map<std::string, StateId, StringHasher> HistStateMap;
 
  public:
@@ -110,19 +110,17 @@ class LmFstConverter {
                             int kstart,
                             int kend,
                             fst::StdVectorFst *pfst,
-                            bool &newlyAdded);
+                            bool &newly_added);
 
   StateId FindState(const std::string str) {
-    HistStateMap::const_iterator it = histState_.find(str);
-     if (it == histState_.end()) {
-       return -1;
-     }
-     return it->second;
+    HistStateMap::const_iterator it = hist_state_.find(str);
+     if (it == hist_state_.end()) return -1;
+     else return it->second;
   }
 
   bool use_natural_log_;
-  BkStateMap bkState_;
-  HistStateMap histState_;
+  BackoffStateMap backoff_state_;
+  HistStateMap hist_state_;
 };
 
 #ifndef HAVE_IRSTLM
@@ -135,7 +133,7 @@ class LmFstConverter {
 class LmTable {
  public:
   LmTable() { conv_ = new LmFstConverter; }
-  ~LmTable() { if (conv_) delete conv_; }
+  ~LmTable() { delete conv_; }
 
   bool ReadFstFromLmFile(std::istream &istrm,
                          fst::StdVectorFst *pfst,
@@ -156,7 +154,7 @@ class LmTable {
 class LmTable : public lmtable {
  public:
   LmTable() { conv_ = new LmFstConverter; }
-  ~LmTable() { if (conv_) delete conv_; }
+  ~LmTable() { delete conv_; }
 
   /// in this implementation, needed functions come from parent class, e.g.
   ///   table_entry_pos_t wdprune(float *thr, int aflag = 0);

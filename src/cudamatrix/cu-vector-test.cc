@@ -1,4 +1,4 @@
-// cudamatrix/cuda-vector-test.cc
+// cudamatrix/cu-vector-test.cc
 
 // Copyright 2013 Lucas Ondel
 //           2013 Johns Hopkins University (author: Daniel Povey)
@@ -463,7 +463,7 @@ template<typename Real> void CuVectorUnitTestApplyExp() {
   vector.ApplyExp();
   for(int32 j = 0; j < dim; j++) {
     //std::cout<<"diff is "<<exp(vector2(j))-vector(j)<<std::endl;;
-    KALDI_ASSERT(std::abs(exp(vector2(j))-vector(j)) < 0.000001 )
+    KALDI_ASSERT(std::abs(Exp(vector2(j))-vector(j)) < 0.000001 );
   }
 
 }
@@ -482,7 +482,7 @@ template<typename Real> void CuVectorUnitTestApplyLog() {
   vector.ApplyLog();
   for(int32 j = 0; j < dim; j++) {
     //std::cout<<"diff is "<<exp(vector2(j))-vector(j)<<std::endl;;
-    KALDI_ASSERT(std::abs(log(vector2(j))-vector(j)) < 0.000001 )
+    KALDI_ASSERT(std::abs(Log(vector2(j))-vector(j)) < 0.000001 );
   }
 }
 
@@ -502,6 +502,27 @@ template<typename Real> void CuVectorUnitTestApplyFloor() {
     AssertEqual(cu2, cu_vector);
     if (i != j) {
       KALDI_WARN << "ApplyFloor return code broken...";
+    }
+    KALDI_ASSERT(i==j);
+  }
+}
+
+template<typename Real> void CuVectorUnitTestApplyCeiling() {
+  for (int32 l = 0; l < 10; l++) {
+    int32 dim = 100 + Rand() % 700;
+    CuVector<Real> cu_vector(dim);
+    cu_vector.SetRandn();
+
+    Vector<Real> vector(cu_vector);
+    BaseFloat floor = 0.33 * (-5 + Rand() % 10);
+    int32 i = cu_vector.ApplyCeiling(floor);
+    int32 j = vector.ApplyCeiling(floor);
+  
+    CuVector<Real> cu2(vector);
+
+    AssertEqual(cu2, cu_vector);
+    if (i != j) {
+      KALDI_WARN << "ApplyCeiling return code broken...";
     }
     KALDI_ASSERT(i==j);
   }
@@ -692,6 +713,7 @@ template<typename Real> void CuVectorUnitTest() {
   CuVectorUnitTestApplyExp<Real>();
   CuVectorUnitTestApplyLog<Real>();
   CuVectorUnitTestApplyFloor<Real>();
+  CuVectorUnitTestApplyCeiling<Real>();
   CuVectorUnitTestApplyPow<Real>();
   CuVectorUnitTestAddMatVec<Real>();
   CuVectorUnitTestAddSpVec<Real>();

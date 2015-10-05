@@ -97,7 +97,7 @@ inline void Uniq(std::vector<T> *vec) {  // must be already sorted.
 /// Copies the elements of a set to a vector.
 template<class T>
 void CopySetToVector(const std::set<T> &s, std::vector<T> *v) {
-  // adds members of s to v, in sorted order from lowest to highest
+  // copies members of s into v, in sorted order from lowest to highest
   // (because the set was in sorted order).
   KALDI_ASSERT(v != NULL);
   v->resize(s.size());
@@ -247,7 +247,7 @@ struct VectorHasher {  // hashing function for vector<Int>.
 
 /// A hashing function-object for pairs of ints
 template<typename Int>
-struct PairHasher { // hashing function for pair<int>
+struct PairHasher {  // hashing function for pair<int>
   size_t operator()(const std::pair<Int,Int> &x) const {
     return x.first + x.second * kPrime;
   }
@@ -303,9 +303,15 @@ template<typename I, typename F>
 inline void MergePairVectorSumming(std::vector<std::pair<I, F> > *vec) {
   KALDI_ASSERT_IS_INTEGER_TYPE(I);
   CompareFirstMemberOfPair<I, F> c;
-  std::sort(vec->begin(), vec->end(), c); // sort on 1st element. 
+  std::sort(vec->begin(), vec->end(), c); // sort on 1st element.
   typename std::vector<std::pair<I, F> >::iterator out = vec->begin(),
       in = vec->begin(), end = vec->end();
+  // special case: while there is nothing to be changed, skip over
+  // initial input (avoids unnecessary copying).
+  while (in + 1 < end && in[0].first != in[1].first && in[0].second != 0.0) {
+    in++;
+    out++;
+  }
   while (in < end) {
     // We reach this point only at the first element of
     // each stretch of identical .first elements.

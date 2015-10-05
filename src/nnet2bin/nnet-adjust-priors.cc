@@ -19,7 +19,6 @@
 
 #include "base/kaldi-common.h"
 #include "util/common-utils.h"
-#include "hmm/transition-model.h"
 #include "nnet2/am-nnet.h"
 #include "hmm/transition-model.h"
 #include "tree/context-dep.h"
@@ -41,7 +40,7 @@ BaseFloat KlDivergence(const Vector<BaseFloat> &p,
 
   for (int32 i = 0; i < p.Dim(); i++) {
     BaseFloat p_prob = p(i) / sum_p, q_prob = q(i) / sum_q;
-    ans += p_prob * log(p_prob / q_prob);
+    ans += p_prob * Log(p_prob / q_prob);
   }
   return ans;
 }
@@ -80,7 +79,7 @@ int main(int argc, char *argv[]) {
         "circumstances than using the priors of the class labels in the training data\n"
         "\n"
         "Typical usage of this program will involve computation of an average pdf-level\n"
-        "posterior with nnet-compute or nnet-compute-from-egs, piped into nnet-sum-rows\n"
+        "posterior with nnet-compute or nnet-compute-from-egs, piped into matrix-sum-rows\n"
         "and then vector-sum, to compute the average posterior\n"
         "\n"
         "Usage: nnet-adjust-priors [options] <nnet-in> <summed-posterior-vector-in> <nnet-out>\n"

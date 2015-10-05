@@ -235,7 +235,9 @@ void NnetDiscriminativeUpdater::LatticeComputations() {
   }
 
   std::vector<BaseFloat> answers;
-  posteriors.Lookup(requested_indexes, &answers);
+  CuArray<Int32Pair> cu_requested_indexes(requested_indexes);
+  answers.resize(requested_indexes.size());
+  posteriors.Lookup(cu_requested_indexes, &(answers[0]));
 
   int32 num_floored = 0;
 
@@ -251,7 +253,7 @@ void NnetDiscriminativeUpdater::LatticeComputations() {
       num_floored++;
     }
     int32 pdf_id = requested_indexes[index].second;
-    BaseFloat pseudo_loglike = log(post / priors(pdf_id)) * opts_.acoustic_scale;
+    BaseFloat pseudo_loglike = Log(post / priors(pdf_id)) * opts_.acoustic_scale;
     KALDI_ASSERT(!KALDI_ISINF(pseudo_loglike) && !KALDI_ISNAN(pseudo_loglike));
     answers[index] = pseudo_loglike;
   }

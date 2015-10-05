@@ -5,6 +5,7 @@
 //                       Go Vivace Inc.;  Yanmin Qian;  Jan Silovsky;
 //                       Johns Hopkins University (Author: Daniel Povey);
 //                       Haihua Xu; Wei Shi
+//                2015   Guoguo Chen
 
 // See ../../COPYING for clarification regarding multiple authors
 //
@@ -22,6 +23,7 @@
 // limitations under the License.
 
 #include "matrix/matrix-lib.h"
+#include "util/stl-utils.h"
 #include <numeric>
 #include <time.h> // This is only needed for UnitTestSvdSpeed, you can
 // comment it (and that function) out if it causes problems.
@@ -600,11 +602,18 @@ static void UnitTestSimpleForVec() {  // testing some simple operaters on vector
     V1.CopyFromVec(V);
     V1.ApplyExp();
     Real a = V.LogSumExp();
-    V2.Set(exp(V.LogSumExp()));
+    V2.Set(Exp(V.LogSumExp()));
     V1.DivElements(V2);
+    V2.CopyFromVec(V);
+
     Real b = V.ApplySoftMax();
     AssertEqual(V1, V);
     AssertEqual(a, b);
+
+    V.ApplyLog();
+    Real c = V2.ApplyLogSoftMax();
+    AssertEqual(V2, V);
+    AssertEqual(a, c);
   }
 
   for (MatrixIndexT i = 0; i < 5; i++) {
@@ -725,19 +734,131 @@ static void UnitTestCopyRows() {
         num_cols = 10 + Rand() % 10;
     Matrix<Real> M(num_rows1, num_cols);
     InitRand(&M);
-    
-    Matrix<Real> N(num_rows2, num_cols), O(num_rows2, num_cols);
+
+    Matrix<Real> N1(num_rows2, num_cols),
+        N2(num_rows2, num_cols), O(num_rows2, num_cols);
     std::vector<int32> reorder(num_rows2);
-    for (int32 i = 0; i < num_rows2; i++)
+    std::vector<const Real*> reorder_src(num_rows2, NULL);
+    for (int32 i = 0; i < num_rows2; i++) {
       reorder[i] = -1 + (Rand() % (num_rows1 + 1));
-    
-    N.CopyRows(M, reorder);
+      if (reorder[i] != -1)
+        reorder_src[i] = M.RowData(reorder[i]);
+    }
+ 
+    N1.CopyRows(M, &(reorder[0]));
+    N2.CopyRows(&(reorder_src[0]));
 
     for (int32 i = 0; i < num_rows2; i++)
       for (int32 j = 0; j < num_cols; j++)
         if (reorder[i] < 0) O(i, j) = 0;
         else O(i, j) = M(reorder[i], j);
-    
+
+    AssertEqual(N1, O);
+    AssertEqual(N2, O);
+  }
+}
+
+template<typename Real>
+static void UnitTestCopyToRows() {
+  for (MatrixIndexT p = 0; p < 10; p++) {
+    MatrixIndexT num_rows1 = 10 + Rand() % 10,
+        num_rows2 = 10 + Rand() % 10,
+        num_cols = 10 + Rand() % 10;
+    Matrix<Real> M(num_rows1, num_cols);
+    InitRand(&M);
+
+    Matrix<Real> N(num_rows2, num_cols), O(num_rows2, num_cols);
+    std::vector<Real*> reorder_dst(num_rows1, NULL);
+    unordered_map<MatrixIndexT, bool> used_index;
+    for (int32 i = 0; i < num_rows1; i++) {
+      MatrixIndexT index = -1 + (Rand() % (num_rows2 + 1));
+      if (used_index.find(index) == used_index.end()) {
+        used_index[index] = true;
+      } else {
+        index = -1;
+      }
+      if (index != -1) {
+        reorder_dst[i] = N.RowData(index);
+        for (int32 j = 0; j < num_cols; j++)
+          O(index, j) = M(i, j);
+      }
+    }
+
+    M.CopyToRows(&(reorder_dst[0]));
+
+    AssertEqual(N, O);
+  }
+}
+
+template<typename Real>
+static void UnitTestAddRows() {
+  for (MatrixIndexT p = 0; p < 10; p++) {
+    MatrixIndexT num_rows1 = 10 + Rand() % 10,
+        num_rows2 = 10 + Rand() % 10,
+        num_cols = 10 + Rand() % 10;
+    Matrix<Real> M(num_rows1, num_cols);
+    InitRand(&M);
+
+    Matrix<Real> N1(num_rows2, num_cols),
+        N2(num_rows2, num_cols), O(num_rows2, num_cols);
+    std::vector<int32> reorder(num_rows2);
+    std::vector<const Real*> reorder_src(num_rows2, NULL);
+    for (int32 i = 0; i < num_rows2; i++) {
+      reorder[i] = -1 + (Rand() % (num_rows1 + 1));
+      if (reorder[i] != -1)
+        reorder_src[i] = M.RowData(reorder[i]);
+    }
+
+    Real alpha =
+        static_cast<Real>((Rand() % num_rows2)) / static_cast<Real>(num_rows1);
+ 
+    N1.AddRows(alpha, M, &(reorder[0]));
+    N2.AddRows(alpha, &(reorder_src[0]));
+
+    for (int32 i = 0; i < num_rows2; i++) {
+      if (reorder[i] != -1) {
+        for (int32 j = 0; j < num_cols; j++) {
+          O(i, j) += alpha * M(reorder[i], j);
+        }
+      }
+    }
+
+    AssertEqual(N1, O);
+    AssertEqual(N2, O);
+  }
+}
+
+template<typename Real>
+static void UnitTestAddToRows() {
+  for (MatrixIndexT p = 0; p < 10; p++) {
+    MatrixIndexT num_rows1 = 10 + Rand() % 10,
+        num_rows2 = 10 + Rand() % 10,
+        num_cols = 10 + Rand() % 10;
+    Matrix<Real> M(num_rows1, num_cols);
+    InitRand(&M);
+
+    Real alpha =
+        static_cast<Real>((Rand() % num_rows2)) / static_cast<Real>(num_rows1);
+
+    Matrix<Real> N(num_rows2, num_cols), O(num_rows2, num_cols);
+    std::vector<Real*> reorder_dst(num_rows1, NULL);
+    unordered_map<MatrixIndexT, bool> used_index;
+    for (int32 i = 0; i < num_rows1; i++) {
+      MatrixIndexT index = -1 + (Rand() % (num_rows2 + 1));
+      if (used_index.find(index) == used_index.end()) {
+        used_index[index] = true;
+      } else {
+        index = -1;
+      }
+      if (index != -1) {
+        reorder_dst[i] = N.RowData(index);
+        for (int32 j = 0; j < num_cols; j++)
+          O(index, j) += alpha * M(i, j);
+      }
+    }
+
+    M.AddToRows(alpha, &(reorder_dst[0]));
+
     AssertEqual(N, O);
   }
 }
@@ -756,7 +877,7 @@ static void UnitTestCopyCols() {
     for (int32 i = 0; i < num_cols2; i++)
       reorder[i] = -1 + (Rand() % (num_cols1 + 1));
     
-    N.CopyCols(M, reorder);
+    N.CopyCols(M, &(reorder[0]));
     
     for (int32 i = 0; i < num_rows; i++)
       for (int32 j = 0; j < num_cols2; j++)
@@ -1136,7 +1257,7 @@ template<typename Real> static void UnitTestDeterminantSign() {
 
     // add in a scaling factor too.
     Real tmp = 1.0 + ((Rand() % 5) * 0.01);
-    Real logdet_factor = dimM * log(tmp);
+    Real logdet_factor = dimM * Log(tmp);
     N.Scale(tmp);
     S.Scale(tmp);
 
@@ -1414,7 +1535,7 @@ template<typename Real> static void UnitTestEig() {
     {  // Check that the eigenvalues match up with the determinant.
       BaseFloat logdet_check = 0.0, logdet = M.LogDet();
       for (MatrixIndexT i = 0; i < dimM ; i++)
-        logdet_check += 0.5 * log(real_eigs(i)*real_eigs(i) + imag_eigs(i)*imag_eigs(i));
+        logdet_check += 0.5 * Log(real_eigs(i)*real_eigs(i) + imag_eigs(i)*imag_eigs(i));
       AssertEqual(logdet_check, logdet);
     }
     Matrix<Real> Pinv(P);
@@ -2297,9 +2418,9 @@ template<typename Real> static void  UnitTestTanh() {
       for (int32 c = 0; c < dimN; c++) {
         Real x = N(r, c);
         if (x > 0.0) {
-          x = -1.0 + 2.0 / (1.0 + exp(-2.0 * x));
+          x = -1.0 + 2.0 / (1.0 + Exp(-2.0 * x));
         } else {
-          x = 1.0 - 2.0 / (1.0 + exp(2.0 * x));
+          x = 1.0 - 2.0 / (1.0 + Exp(2.0 * x));
         }
         N(r, c) = x;
         Real out_diff = P(r, c), in_diff = out_diff * (1.0 - x * x);
@@ -2323,7 +2444,7 @@ template<typename Real> static void  UnitTestSigmoid() {
     for(int32 r = 0; r < dimM; r++) {
       for (int32 c = 0; c < dimN; c++) {
         Real x = N(r, c),
-            y = 1.0 / (1 + exp(-x));
+            y = 1.0 / (1 + Exp(-x));
         N(r, c) = y;
         Real out_diff = P(r, c), in_diff = out_diff * y * (1.0 - y);
         Q(r, c) = in_diff;
@@ -2348,7 +2469,7 @@ template<typename Real> static void  UnitTestSoftHinge() {
         Real x = M(r, c);
         Real &y = N(r, c);
         if (x > 10.0) y = x;
-        else y = log(1.0 + exp(x));
+        else y = Log1p(Exp(x));
       }
     }
     O.SoftHinge(M);
@@ -2387,7 +2508,7 @@ template<typename Real> static void  UnitTestSimple() {
     {
       Vector<Real> V2(V);
       for (MatrixIndexT i = 0; i < V2.Dim(); i++)
-        V2(i) = exp(V2(i));
+        V2(i) = Exp(V2(i));
       V.ApplyExp();
       AssertEqual(V, V2);
     }
@@ -2395,7 +2516,7 @@ template<typename Real> static void  UnitTestSimple() {
       Matrix<Real> N2(N), N3(N);
       for (MatrixIndexT i = 0; i < N.NumRows(); i++)
         for (MatrixIndexT j = 0; j < N.NumCols(); j++)
-          N2(i, j) = exp(N2(i, j));
+          N2(i, j) = Exp(N2(i, j));
       N3.ApplyExp();
       AssertEqual(N2, N3);
     }
@@ -3113,7 +3234,7 @@ template<typename Real> static void UnitTestLbfgs() {
       Vector<Real> dlogf_dx(v); //  derivative of log(f) w.r.t. x.
       dlogf_dx.AddSpVec(-1.0, S, x, 1.0);
       KALDI_VLOG(2) << "Gradient magnitude is " << dlogf_dx.Norm(2.0);
-      Real f = exp(c * logf);
+      Real f = Exp(c * logf);
       Vector<Real> df_dx(dlogf_dx);
       df_dx.Scale(f * c); // comes from derivative of the exponential function.
       f *= sign;
@@ -3167,8 +3288,10 @@ template<typename Real> static void UnitTestLinearCgd() {
 
     if (iters >= M) {
       // should have converged fully.
-      KALDI_LOG << "error = " << error << ", b norm is " << b.Norm(2.0);
-      KALDI_ASSERT(error < 1.0e-03 * b.Norm(2.0));
+      Real max_abs = A.MaxAbsEig();
+      KALDI_LOG << "error = " << error << ", b norm is " << b.Norm(2.0)
+                << ", A max-abs-eig is " << max_abs;
+      KALDI_ASSERT(error < 1.0e-04 * b.Norm(2.0) * max_abs);
     } else {
       BaseFloat wiggle_room = 1.1;
       if (opts.max_iters >= 0) {
@@ -4172,7 +4295,103 @@ template<typename Real> static void UnitTestCompressedMatrix() {
 
   unlink("tmpf");
 }
-  
+
+template<typename Real> static void UnitTestGeneralMatrix() {
+  // This is the basic test.
+
+  GeneralMatrix empty_pmat;  // some tests on empty matrix
+  KALDI_ASSERT(empty_pmat.NumRows() == 0);
+  KALDI_ASSERT(empty_pmat.NumCols() == 0);
+
+  // could set num_tot to 10000 for more thorough testing.
+  MatrixIndexT num_failure = 0, num_tot = 10000, max_failure = 1;
+  for (MatrixIndexT n = 0; n < num_tot; n++) {
+    MatrixIndexT num_rows = Rand() % 20, num_cols = Rand() % 15;
+    if (num_rows * num_cols == 0) {
+      num_rows = 0;
+      num_cols = 0;
+    }
+    if (rand() % 2 == 0 && num_cols != 0) {
+      // smaller matrices are more likely to have problems.
+      num_cols = 1 + Rand() % 3;
+    }
+    Matrix<Real> M(num_rows, num_cols);
+    if (Rand() % 3 != 0) InitRand(&M);
+    else {
+      M.Add(RandGauss());
+    }
+    if (Rand() % 2 == 0 && num_rows != 0) {  // set one row to all the same value,
+      // which is one possible pathology.
+      // Give it large dynamic range to increase chance that it
+      // is the largest or smallest value in the matrix.
+      M.Row(Rand() % num_rows).Set(RandGauss() * 4.0);
+    }
+    double rand_val = RandGauss() * 4.0;
+    // set a bunch of elements to all one value: increases
+    // chance of pathologies.
+    MatrixIndexT modulus = 1 + Rand() % 5;
+    for (MatrixIndexT r = 0; r < num_rows; r++)
+      for (MatrixIndexT c = 0; c < num_cols; c++)
+        if (Rand() % modulus != 0) M(r, c) = rand_val;
+
+    GeneralMatrix pmat(M);
+    if (RandInt(0, 1) == 0)
+      pmat.Compress();
+
+    if (RandInt(0, 1) == 0) {
+      SparseMatrix<BaseFloat> smat(num_rows, num_cols);
+      smat.SetRandn(0.1);
+      pmat.Clear();
+      smat.CopyToMat(&M, kNoTrans);
+      pmat.SwapSparseMatrix(&smat);
+    }
+    
+    KALDI_ASSERT(pmat.NumRows() == num_rows);
+    KALDI_ASSERT(pmat.NumCols() == num_cols);
+    GeneralMatrix pmat2(pmat);
+
+    Matrix<Real> M2(pmat2.NumRows(), pmat2.NumCols());
+    pmat2.GetMatrix(&M2);
+
+    Matrix<Real> diff(M2);
+    diff.AddMat(-1.0, M);
+
+    if (n < 5) {  // test I/O.
+      bool binary = (n % 2 == 1);
+      {
+        std::ofstream outs("tmpf", std::ios_base::out |std::ios_base::binary);
+        InitKaldiOutputStream(outs, binary);
+        pmat.Write(outs, binary);
+      }
+      GeneralMatrix pmat3;
+      {
+        bool binary_in;
+        std::ifstream ins("tmpf", std::ios_base::in | std::ios_base::binary);
+        InitKaldiInputStream(ins, &binary_in);
+        pmat3.Read(ins, binary_in);
+      }
+
+      Matrix<Real> M3(pmat3.NumRows(), pmat3.NumCols());
+      pmat3.GetMatrix(&M3);
+      AssertEqual(M, M3);
+    }
+
+    KALDI_LOG << "M = " << M;
+    KALDI_LOG << "M2 = " << M2;
+    double tot = M.FrobeniusNorm(), err = diff.FrobeniusNorm();
+    KALDI_LOG << "Compressed matrix, tot = " << tot << ", diff = "
+              << err;
+    if (err > 0.015 * tot) {
+      KALDI_WARN << "Failure in possibly compressed-matrix test.";
+      num_failure++;
+    }
+  }
+  if (num_failure > max_failure)
+    KALDI_ERR << "Too many failures in possibly compressed matrix test " << num_failure
+              << " > " << max_failure;
+
+  unlink("tmpf");
+}
 
 template<typename Real>
 static void UnitTestExtractCompressedMatrix() {
@@ -4315,7 +4534,10 @@ template<typename Real> static void UnitTestTriVecSolver() {
   }
 }
 
+
 template<typename Real> static void MatrixUnitTest(bool full_test) {
+  UnitTestLinearCgd<Real>();
+  UnitTestGeneralMatrix<BaseFloat>();
   UnitTestTridiagonalize<Real>();
   UnitTestTridiagonalizeAndQr<Real>();  
   UnitTestAddMatSmat<Real>();
@@ -4323,7 +4545,6 @@ template<typename Real> static void MatrixUnitTest(bool full_test) {
   UnitTestFloorUnit<Real>();
   UnitTestAddMat2Sp<Real>();
   UnitTestLbfgs<Real>();
-  UnitTestLinearCgd<Real>();
   // UnitTestSvdBad<Real>(); // test bug in Jama SVD code.
   UnitTestCompressedMatrix<Real>();
   UnitTestExtractCompressedMatrix<Real>();
@@ -4414,6 +4635,9 @@ template<typename Real> static void MatrixUnitTest(bool full_test) {
   UnitTestNorm<Real>();
   UnitTestCopyCols<Real>();
   UnitTestCopyRows<Real>();
+  UnitTestCopyToRows<Real>();
+  UnitTestAddRows<Real>();
+  UnitTestAddToRows<Real>();
   UnitTestMul<Real>();
   KALDI_LOG << " Point I";
   UnitTestSolve<Real>();
@@ -4468,6 +4692,7 @@ template<typename Real> static void MatrixUnitTest(bool full_test) {
 int main() {
   using namespace kaldi;
   bool full_test = false;
+  SetVerboseLevel(5);
   kaldi::MatrixUnitTest<float>(full_test);
   kaldi::MatrixUnitTest<double>(full_test);
   KALDI_LOG << "Tests succeeded.";
