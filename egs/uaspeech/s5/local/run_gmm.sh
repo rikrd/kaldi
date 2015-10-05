@@ -16,7 +16,7 @@ script_path=`dirname $0`
 . ${script_path}/../path.sh
 
 nj=12
-decode_nj=16
+decode_nj=1
 parallel_opts=
 
 stage=0

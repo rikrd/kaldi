@@ -17,6 +17,7 @@ script_path=`dirname $0`
 
 feature=mfcc
 jq_args=
+max_count=
 
 . ${script_path}/../utils/parse_options.sh # accept options
 
@@ -40,6 +41,15 @@ ${jq_cmd} ${jq_args} -r "${test_filter}" ${REC_ROOT}/tmp/uaspeech.json > ${dir}/
 
 src_dir=${REC_ROOT}/data/${feature}_data_full
 
-. ${script_path}/../local/reduce_data_dir_by_reclist.sh ${src_dir} ${dir}/train_filter ${dir}/train
-. ${script_path}/../local/reduce_data_dir_by_reclist.sh ${src_dir} ${dir}/adapt_filter ${dir}/adapt
-. ${script_path}/../local/reduce_data_dir_by_reclist.sh ${src_dir} ${dir}/test_filter ${dir}/test
+subset_suffix=
+if [[ ! -z "{max_count}" ]]; then
+  subset_suffix="_subset"
+  python -c "import random,sys;ls=sys.stdin.readlines();random.seed(1);ls=random.sample(ls,min(${max_count}, len(ls)));print ''.join(sorted(ls))," < ${dir}/train_filter > ${dir}/train_filter_subset
+  python -c "import random,sys;ls=sys.stdin.readlines();random.seed(1);ls=random.sample(ls,min(${max_count}, len(ls)));print ''.join(sorted(ls))," < ${dir}/test_filter > ${dir}/test_filter_subset
+  python -c "import random,sys;ls=sys.stdin.readlines();random.seed(1);ls=random.sample(ls,min(${max_count}, len(ls)));print ''.join(sorted(ls))," < ${dir}/adapt_filter > ${dir}/adapt_filter_subset
+fi
+
+. ${script_path}/../local/reduce_data_dir_by_reclist.sh ${src_dir} ${dir}/train_filter${subset_suffix} ${dir}/train
+. ${script_path}/../local/reduce_data_dir_by_reclist.sh ${src_dir} ${dir}/adapt_filter${subset_suffix} ${dir}/adapt
+. ${script_path}/../local/reduce_data_dir_by_reclist.sh ${src_dir} ${dir}/test_filter${subset_suffix} ${dir}/test
+
