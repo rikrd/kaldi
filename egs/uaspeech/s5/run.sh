@@ -33,6 +33,11 @@ local/run_leave_out.sh \
     --feature "${feature}" \
     --max-count "${max_count}"
 
-for dir in `ls ${REC_ROOT}/leave_one_out`; do
-    qsub -l mem=24G,rmem=20G,h_rt=48:00:00 -j y -o ${logfile} local/run_gmm.sh --stage "${stage}" --overwrite "${overwrite}" ${dir}
+for dir in `s ${REC_ROOT}/leave_one_out`; do
+    logfile=${dir}/run_gmm_log.txt
+    scriptfile=${dir}/run_gmm_script.sh
+
+    echo "local/run_gmm.sh --stage ${stage} --overwrite ${overwrite} ${dir}" > ${scriptfile}
+    chmod u+x ${scriptfile}
+    qsub -l mem=24G,rmem=20G,h_rt=48:00:00 -j y -o ${logfile} ${scriptfile}
 done
