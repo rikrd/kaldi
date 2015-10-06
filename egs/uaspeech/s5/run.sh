@@ -33,7 +33,7 @@ local/run_leave_out.sh \
     --feature "${feature}" \
     --max-count "${max_count}"
 
-for dir in `s ${REC_ROOT}/leave_one_out`; do
+for dir in `ls ${REC_ROOT}/leave_one_out`; do
     logfile=${dir}/run_gmm_log.txt
     scriptfile=${dir}/run_gmm_script.sh
 

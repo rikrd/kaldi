@@ -18,6 +18,7 @@ script_path=`dirname $0`
 feature=mfcc
 jq_args=
 max_count=
+stage=0
 
 . ${script_path}/../utils/parse_options.sh # accept options
 
@@ -52,4 +53,3 @@ fi
 . ${script_path}/../local/reduce_data_dir_by_reclist.sh ${src_dir} ${dir}/train_filter${subset_suffix} ${dir}/train
 . ${script_path}/../local/reduce_data_dir_by_reclist.sh ${src_dir} ${dir}/adapt_filter${subset_suffix} ${dir}/adapt
 . ${script_path}/../local/reduce_data_dir_by_reclist.sh ${src_dir} ${dir}/test_filter${subset_suffix} ${dir}/test
-
