@@ -43,7 +43,7 @@ ${jq_cmd} ${jq_args} -r "${test_filter}" ${REC_ROOT}/tmp/uaspeech.json > ${dir}/
 src_dir=${REC_ROOT}/data/${feature}_data_full
 
 subset_suffix=
-if [[ ! -z "{max_count}" ]]; then
+if [[ ! -z "${max_count}" ]]; then
   subset_suffix="_subset"
   python -c "import random,sys;ls=sys.stdin.readlines();random.seed(1);ls=random.sample(ls,min(${max_count}, len(ls)));print ''.join(sorted(ls))," < ${dir}/train_filter > ${dir}/train_filter_subset
   python -c "import random,sys;ls=sys.stdin.readlines();random.seed(1);ls=random.sample(ls,min(${max_count}, len(ls)));print ''.join(sorted(ls))," < ${dir}/test_filter > ${dir}/test_filter_subset
