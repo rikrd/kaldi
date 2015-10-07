@@ -11,16 +11,15 @@ script_path=`dirname $0`
 
 # Convert the transcriptions from integers to words
 for transcription in `find . -iname "*.tra"`; do
+    echo "$0: Processing $transcription ..."
     transcription_dir=`dirname ${transcription}`
     words_dir=`dirname ${transcription_dir} | sed 's/decode_/graph_/' | sed 's/_test//' | sed 's/\.si//'`
     utils/int2sym.pl -f 2- ${words_dir}/words.txt ${transcription} > ${transcription}.sym
+
+    ${jq_cmd} -R -f local/collect_transcriptions.jq \
+        ${transcription}.sym ${transcription_dir}/test_filt.txt  > ${transcription_dir}/utterance_transcriptions.json
 done
 
-# Collect into one JSON all the transcriptions (and reference text) of the utterances
-find . -iname "*.tra.sym" -o -iname "test_filt.txt" \
-    | xargs ${jq_cmd} -R -f local/collect_transcriptions.jq > results.json
-
-
-
 # Summarize
-${jq_cmd} -f local/summarize.jq results.json
+find . -iname "utterance_transcriptions.json" \
+    | xargs ${jq_cmd} -f local/summarize.jq
