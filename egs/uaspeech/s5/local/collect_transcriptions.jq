@@ -13,7 +13,7 @@ reduce inputs as $line
                     model: $exp_tokens[-4],
                     utterances: {
                         ($tokens[0]): {
-                            ($transcription_key): $transcription,
+                            #($transcription_key): $transcription,
                             ($transcription_key + "_normalized"): ($transcription | sub("\\(\\d+\\)$"; "") )
                         }
                     }
