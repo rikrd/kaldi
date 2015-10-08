@@ -16,6 +16,7 @@ for transcription in `find . -iname "*.tra"`; do
     words_dir=`dirname ${transcription_dir} | sed 's/decode_/graph_/' | sed 's/_test//' | sed 's/\.si//'`
     utils/int2sym.pl -f 2- ${words_dir}/words.txt ${transcription} > ${transcription}.sym
 
+    echo "$0: Running jq ..."
     ${jq_cmd} -R -f local/collect_transcriptions.jq \
         ${transcription}.sym ${transcription_dir}/test_filt.txt  > ${transcription_dir}/utterance_transcriptions.json
 done
