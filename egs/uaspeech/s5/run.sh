@@ -39,6 +39,10 @@ for set in `ls ${REC_ROOT}/leave_one_out`; do
     scriptfile=${dir}/run_gmm_script.sh
 
     echo "local/run_gmm.sh --stage ${stage} --overwrite ${overwrite} ${dir}" > ${scriptfile}
+    for task in largevocab uaspeechvocab; do
+        echo "local/run_gmm_decode.sh --stage ${stage} --overwrite ${overwrite} ${dir} ${task}" >> ${scriptfile}
+    done
+
     chmod u+x ${scriptfile}
     qsub -l mem=24G,rmem=20G,h_rt=48:00:00 -j y -o ${logfile} ${scriptfile}
 done

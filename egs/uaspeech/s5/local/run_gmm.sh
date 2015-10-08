@@ -46,18 +46,8 @@ if [ ${stage} -le 22 ]; then
     2500 30000 ${dir}/train ${REC_ROOT}/data/lang ${dir}/exp/mono0a_ali ${dir}/exp/tri1 || exit 1;
 fi
 
-# Decode monophone model
-if [ ${stage} -le 23 ]; then
-  utils/mkgraph.sh ${REC_ROOT}/data/lang_largevocab_test ${dir}/exp/tri1 ${dir}/exp/tri1/graph_largevocab || exit 1;
-
-  steps/decode.sh --nj ${decode_nj} --cmd "$decode_cmd" \
-    --num-threads 4 --parallel-opts "${parallel_opts}" \
-    --scoring-opts "--min-lmwt 1 --max-lmwt 1" \
-    ${dir}/exp/tri1/graph_largevocab ${dir}/test ${dir}/exp/tri1/decode_largevocab_test || exit 1;
-fi
-
 # Train triphone models
-if [ ${stage} -le 24 ]; then
+if [ ${stage} -le 23 ]; then
   steps/align_si.sh --nj $nj \
     ${dir}/train ${REC_ROOT}/data/lang ${dir}/exp/tri1 ${dir}/exp/tri1_ali || exit 1;
 
@@ -72,39 +62,11 @@ if [ ${stage} -le 24 ]; then
     2500 15000 ${dir}/train ${REC_ROOT}/data/lang ${dir}/exp/tri2b_ali ${dir}/exp/tri3b || exit 1;
 fi
 
-# Decode triphone models
-if [ ${stage} -le 25 ]; then
-  utils/mkgraph.sh ${REC_ROOT}/data/lang_largevocab_test ${dir}/exp/tri2b ${dir}/exp/tri2b/graph_largevocab || exit 1;
-
-  steps/decode_fmllr.sh --nj ${decode_nj} --cmd "$decode_cmd" \
-    --num-threads 4 --parallel-opts "${parallel_opts}" \
-    --scoring-opts "--min-lmwt 1 --max-lmwt 1" \
-    ${dir}/exp/tri2b/graph_largevocab ${dir}/test ${dir}/exp/tri2b/decode_largevocab_test || exit 1;
-
-  utils/mkgraph.sh ${REC_ROOT}/data/lang_largevocab_test ${dir}/exp/tri3b ${dir}/exp/tri3b/graph_largevocab || exit 1;
-
-  steps/decode_fmllr.sh --nj ${decode_nj} --cmd "$decode_cmd" \
-    --num-threads 4 --parallel-opts "${parallel_opts}" \
-    --scoring-opts "--min-lmwt 1 --max-lmwt 1" \
-    ${dir}/exp/tri3b/graph_largevocab ${dir}/test ${dir}/exp/tri3b/decode_largevocab_test || exit 1;
-fi
-
 # Adapt using the 'adapt' data dir
-if [ ${stage} -le 26 ]; then
+if [ ${stage} -le 24 ]; then
   steps/align_si.sh  --nj ${align_nj} --cmd "$train_cmd" \
     ${dir}/adapt ${REC_ROOT}/data/lang ${dir}/exp/tri3b ${dir}/exp/tri3b_ali_adapt || exit 1;
 
   steps/train_map.sh --cmd "$train_cmd" \
     ${dir}/adapt ${REC_ROOT}/data/lang ${dir}/exp/tri3b_ali_adapt ${dir}/exp/tri3b_adapt || exit 1;
-fi
-
-# Decode the adapted models
-if [ ${stage} -le 27 ]; then
-  utils/mkgraph.sh \
-    ${REC_ROOT}/data/lang_largevocab_test ${dir}/exp/tri3b_adapt ${dir}/exp/tri3b_adapt/graph_largevocab || exit 1;
-
-  steps/decode_fmllr.sh --nj ${decode_nj} --cmd "$decode_cmd" \
-    --num-threads 4 --parallel-opts "${parallel_opts}" \
-    --scoring-opts "--min-lmwt 1 --max-lmwt 1" \
-    ${dir}/exp/tri3b_adapt/graph_largevocab ${dir}/test ${dir}/exp/tri3b_adapt/decode_largevocab_test || exit 1;
 fi
