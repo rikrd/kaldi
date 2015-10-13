@@ -22,27 +22,10 @@ max_count=
 
 . utils/parse_options.sh # accept options
 
-mkdir -p ${REC_ROOT}
+local/run_all.sh --feature "${feature}" --feature_maker "${feature_maker}" \
+    --max-count "${max_count}" --stage "${stage}" --overwrite "${overwrite}" \
+    --setting "adapt_to_one"
 
-local/run_init.sh \
-    --overwrite "${overwrite}" --stage "${stage}" \
-    --feature "${feature}" --feature-maker "${feature_maker}"
-
-local/run_leave_out.sh \
-    --overwrite "${overwrite}" --stage "${stage}" \
-    --feature "${feature}" \
-    --max-count "${max_count}"
-
-for set in `ls ${REC_ROOT}/leave_one_out`; do
-    dir=${REC_ROOT}/leave_one_out/${set}
-    logfile=${dir}/run_gmm_log.txt
-    scriptfile=${dir}/run_gmm_script.sh
-
-    echo "local/run_gmm.sh --stage ${stage} --overwrite ${overwrite} ${dir}" > ${scriptfile}
-    for task in largevocab uaspeechvocab; do
-        echo "local/run_gmm_decode.sh --stage ${stage} --overwrite ${overwrite} ${dir} ${task}" >> ${scriptfile}
-    done
-
-    chmod u+x ${scriptfile}
-    qsub -l mem=24G,rmem=20G,h_rt=48:00:00 -j y -o ${logfile} ${scriptfile}
-done
+local/run_all.sh --feature "${feature}" --feature_maker "${feature_maker}" \
+    --max-count "${max_count}" --stage "${stage}" --overwrite "${overwrite}" \
+    --setting "leave_out"
