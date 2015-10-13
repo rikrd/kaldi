@@ -27,6 +27,7 @@ import scipy
 import scipy.io.wavfile as wavefile
 import matplotlib.pyplot as pplot
 import docopt
+import bottle
 
 __author__ = 'rmarxer'
 
@@ -57,7 +58,7 @@ def load_alignments(alignment_filename, lang_directory):
     return alignments
 
 
-def show_alignment(utt_id, alignments):
+def show_alignment_matplotlib(utt_id, alignments):
     print('Showing {} ...'.format(utt_id))
     speaker, block, word, mic = utt_id.split('_')
 
@@ -73,16 +74,114 @@ def show_alignment(utt_id, alignments):
     pplot.plot(t, wav)
     segments = alignments[utt_id]
     print(segments)
+
+    ax = pplot.gca()
+    color_cycle = ax._get_lines.color_cycle
+
+    colors = {}
     for start, end, label in segments:
         if label == 'SIL':
             continue
 
+        normalized_label = label.replace('_B', '').replace('_E', '').replace('_I', '').replace('_S', '')
+        if normalized_label not in colors:
+            colors[normalized_label] = color_cycle.next()
+
         length = end-start
-        pplot.axvspan(start, end, color='g', alpha=0.5)
-        pplot.annotate(label.replace('_B', '').replace('_E', '').replace('_I', '').replace('_S', ''),
-                       xy=(start + length/2.0, 1), xytext=(start + length/2.0, 1.5), textcoords='data')
+        pplot.axvspan(start, end, color=colors[normalized_label], alpha=0.5)
+
+        ylim = ax.get_ylim()
+        pplot.annotate(normalized_label,
+                       horizontalalignment='center', verticalalignment='center', fontsize=12,
+                       xy=(start + length/2.0, 1), xytext=(start + length/2.0, ylim[1]*0.9), textcoords='data')
 
     pplot.show()
+
+
+def show_alignment_wavesurferjs(utt_id, alignments):
+    print('Showing {} ...'.format(utt_id))
+    speaker, block, word, mic = utt_id.split('_')
+
+    wav_filename = '/Users/rmarxer/data/UASPEECH/audio/{}{}/{}.wav'.format('control/' if speaker.startswith('C') else '',
+                                                                           speaker,
+                                                                           utt_id)
+
+    wav_filename = os.path.relpath(wav_filename, os.path.expanduser('~'))
+
+    print('Loading WAV {} ...'.format(wav_filename))
+
+    segments = alignments[utt_id]
+
+    # Prepare the segments for the wavesurfer regions plugin
+    segments_clean = [(start, end, label.replace('_B', '').replace('_E', '').replace('_I', '').replace('_S', ''))
+                      for start, end, label in segments
+                      if label != 'SIL']
+
+    regions_add = ''
+    for start, end, label in segments_clean:
+        rgba = 'rgba({},{},{}, 0.3)'.format(random.randint(0, 255),
+                                            random.randint(0, 255),
+                                            random.randint(0, 255))
+
+        regions_add += 'wavesurfer.addRegion({' \
+                       'start: %f, ' \
+                       'end: %f, ' \
+                       'color: "%s",' \
+                       'data: { label: "%s" },' \
+                       '})\n' % (start, end, rgba, label)
+
+    # Serve a web with one single element corresponding to the wavesurfer element
+    index_html = '''
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Wave visualisation</title>
+
+        <!-- wavesurfer.js -->
+        <script src="js/wavesurfer.min.js"></script>
+
+        <!-- regions plugin -->
+        <script src="js/wavesurfer.regions.js"></script>
+    </head>
+    <body>
+        <div id="wave">
+        </div>
+        <script>
+            var wavesurfer = Object.create(WaveSurfer);
+
+            wavesurfer.init({
+                container: document.querySelector('#wave'),
+                normalize: true,
+                waveColor: 'violet',
+                progressColor: 'purple'
+            });
+
+            wavesurfer.on('ready', function () {
+%s
+                wavesurfer.play();
+            });
+
+            wavesurfer.load('%s');
+        </script>
+    </body>
+</html>
+    ''' % (regions_add, 'audio/' + wav_filename,)
+
+    @bottle.route('/')
+    def index():
+        return index_html
+
+    @bottle.route('/js/<filename:path>')
+    def server_static(filename):
+        return bottle.static_file(filename, root=os.path.join(os.path.dirname(__file__)))
+
+    @bottle.route('/audio/<filename:path>')
+    def server_static(filename):
+        return bottle.static_file(filename, root=os.path.expanduser('~'))
+
+    bottle.run(host='localhost', port=8080)
+
+    # Open the web and enjoy
 
 
 def main():
@@ -95,7 +194,7 @@ def main():
     if not utt_id:
         utt_id = alignments.keys()[int(random.random()*len(alignments))]
 
-    show_alignment(utt_id, alignments)
+    show_alignment_wavesurferjs(utt_id, alignments)
 
 
 if __name__ == '__main__':
