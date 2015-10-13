@@ -55,9 +55,11 @@ feat_dir=${REC_ROOT}/data/${feature}_features
 if [ ${stage} -le 1 ]; then
   dir=${REC_ROOT}/data/${feature}_data_full
 
-  ${feature_maker} --nj $nj --cmd "$train_cmd" $dir $dir/log $dir/data || exit 1
+  if [ ! -d "${dir}" ] || [ "$overwrite" = true ]; then
+    ${feature_maker} --nj $nj --cmd "$train_cmd" $dir $dir/log $dir/data || exit 1
 
-  steps/compute_cmvn_stats.sh $dir $dir/log $dir/data || exit 1
+    steps/compute_cmvn_stats.sh $dir $dir/log $dir/data || exit 1
 
-  utils/fix_data_dir.sh $dir || exit 1
+    utils/fix_data_dir.sh $dir || exit 1
+  fi
 fi
