@@ -80,6 +80,11 @@ def _get_col_value(rows, row_index, col_index):
     return value
 
 
+def _parse_intelligibility(intell_string):
+    return re.match(r"(?P<intelligibility_class>.*) "
+                    r"\((?P<intelligibility_percentage>\d+(?:.\d+)?)%\)$", intell_string).groupdict()
+
+
 def load_speakers(uaspeech_path, speakers):
     speaker_wordlist_filename = os.path.join(uaspeech_path, 'speaker_wordlist.xls')
 
@@ -91,12 +96,18 @@ def load_speakers(uaspeech_path, speakers):
     for i, row in enumerate(rows):
         speaker = row[0].value.strip()
         if speaker in speakers:
-            speakers[speaker]['properties'] = {
+            speakers[speaker].update({
                 'age': _get_col_value(rows, i, 1),
-                'speech_intelligibility': _get_col_value(rows, i, 2),
                 'dysarthria_diagnosis': _get_col_value(rows, i, 3),
                 'motor_control': _get_col_value(rows, i, 4)
-            }
+            })
+
+            speakers[speaker].update(_parse_intelligibility(_get_col_value(rows, i, 2)))
+
+            s = speakers[speaker]
+
+            s['intelligibility_class'] = s['intelligibility_class'].lower()
+            s['intelligibility_percentage'] = float(s['intelligibility_percentage'])
 
     return speakers
 

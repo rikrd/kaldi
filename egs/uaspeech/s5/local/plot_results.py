@@ -1,11 +1,24 @@
+#!/usr/bin/env python
+
 import glob
+import json
 import pandas as pd
 import re
 
 __author__ = 'rmarxer'
 
 
+def analyze(df):
+    df['accuracy'] = (df['total'] - df['errors']) * 100.0 / df['total']
+    grouped = df.groupby(['setting', 'setting_param', 'model', 'test'])
+    
+
+
 def main():
+    uaspeech_filename = 'results/tmp/uaspeech.json'
+    with open(uaspeech_filename) as f:
+        speakers = json.load(f)['speakers']
+
     result_filenames = glob.glob("results/*/*/exp/*/decode_*/wer_*")
     results = []
 
@@ -26,6 +39,12 @@ def main():
             raise ValueError('Line "{}" does not match the pattern.')
 
         result = match.groupdict()
+        result['errors'] = int(result['errors'])
+        result['total'] = int(result['total'])
+        result['insertions'] = int(result['insertions'])
+        result['deletions'] = int(result['deletions'])
+        result['substitutions'] = int(result['substitutions'])
+        result['wer'] = float(result['wer'])
 
         tokens = filename.split('/')
 
@@ -33,15 +52,15 @@ def main():
         result['setting_param'] = tokens[2]
         result['model'] = tokens[4]
         result['test'] = tokens[5].replace('decode_', '').replace('_test', '')
-        result['language_model_weight'] = tokens[6].replace('wer_', '')
+        result['language_model_weight'] = int(tokens[6].replace('wer_', ''))
+
+        result.update(speakers[result['setting_param']])
 
         results.append(result)
 
     df = pd.DataFrame(results)
-    
-    print(df)
 
-    return
+    return df
 
 if __name__ == '__main__':
     main()
