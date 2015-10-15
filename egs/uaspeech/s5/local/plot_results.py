@@ -59,7 +59,8 @@ def main():
         results.append(result)
 
     df = pd.DataFrame(results)
-
+    df.save('results.pandas')
+    
     analyze(df)
 
     return df
