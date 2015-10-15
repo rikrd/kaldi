@@ -10,8 +10,11 @@ __author__ = 'rmarxer'
 
 def analyze(df):
     df['accuracy'] = (df['total'] - df['errors']) * 100.0 / df['total']
-    grouped = df.groupby(['setting', 'model', 'test', 'intelligibility_class', 'setting_param'])
-    print(grouped.accuracy.describe())
+
+    grouped = df.groupby(['setting', 'model', 'test', 'intelligibility_class'])
+
+    described = grouped.accuracy.describe()
+    described.loc[:, 'tri3b_adapt', 'uaspeechvocab', :, 'mean'].plot(kind='bar')
 
 
 def main():
@@ -59,7 +62,7 @@ def main():
         results.append(result)
 
     df = pd.DataFrame(results)
-    df.to_json('results.pandas')
+    df.to_json('results.json')
 
     analyze(df)
 
