@@ -18,7 +18,8 @@ fullhost=`hostname -f`
 
 # If on the Iceberg cluster...
 if [[ ${fullhost} == *"iceberg.shef.ac.uk" ]]; then
-  module load apps/python/2.7
+  module load apps/python-conda
+  source activate anaconda2-2.3.0
 
   export train_cmd="queue.pl"
   export decode_cmd="queue.pl"

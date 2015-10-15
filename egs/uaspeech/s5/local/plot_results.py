@@ -10,7 +10,7 @@ __author__ = 'rmarxer'
 
 def analyze(df):
     df['accuracy'] = (df['total'] - df['errors']) * 100.0 / df['total']
-    grouped = df.groupby(['setting', 'setting_param', 'model', 'test'])
+    grouped = df.groupby(['setting', 'model', 'test', 'intelligibility_class', 'setting_param'])
     print(grouped.accuracy.describe())
 
 
