@@ -10,11 +10,18 @@ __author__ = 'rmarxer'
 
 def analyze(df):
     df['accuracy'] = (df['total'] - df['errors']) * 100.0 / df['total']
+    df['intelligibility_class'] = df['intelligibility_class'].astype('category')
+    df['intelligibility_class'] = df['intelligibility_class'].cat.reorder_categories(['high', 'mid', 'low', 'very low'],
+                                                                                     ordered=True)
+
+    df['setting'] = df['setting'].astype('category')
+    df['setting'] = df['setting'].cat.reorder_categories(['leave_one_out', 'adapt_to_one'],
+                                                         ordered=True)
 
     grouped = df.groupby(['setting', 'model', 'test', 'intelligibility_class'])
 
     described = grouped.accuracy.describe()
-    described.loc[:, 'tri3b_adapt', 'uaspeechvocab', :, 'mean'].plot(kind='bar')
+    described.loc[:, 'tri3b_adapt', 'uaspeechvocab', :, 'mean'].unstack('setting').plot(kind='bar')
 
 
 def main():
