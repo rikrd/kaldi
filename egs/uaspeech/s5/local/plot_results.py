@@ -4,8 +4,12 @@ import glob
 import json
 import pandas as pd
 import re
+import pylab
 
 __author__ = 'rmarxer'
+
+
+SIDD_BEST_RESULTS = [86.87, 69.54, 62.98, 28.71]
 
 
 def analyze(df):
@@ -21,10 +25,16 @@ def analyze(df):
     grouped = df.groupby(['setting', 'model', 'test', 'intelligibility_class'])
 
     described = grouped.accuracy.describe()
-    described.loc[:, 'tri3b_adapt', 'uaspeechvocab', :, 'mean'].unstack('setting').plot(kind='bar')
+    x = described.loc[:, 'tri3b_adapt', 'uaspeechvocab', :, 'mean'].unstack('setting')
+
+    # Taken from the paper: http://www.slpat.org/slpat2015/papers/sehgal-cunningham.pdf
+    x['sidd'] = SIDD_BEST_RESULTS
+
+    x.plot(kind='bar')
+    pylab.show()
 
 
-def main():
+def collect():
     uaspeech_filename = 'results/tmp/uaspeech.json'
     with open(uaspeech_filename) as f:
         speakers = json.load(f)['speakers']
@@ -70,10 +80,20 @@ def main():
 
     df = pd.DataFrame(results)
     df.to_json('results.json')
+    return df
+
+
+def main():
+    try:
+        df = pd.read_json('results.json')
+
+    except (ValueError, KeyError) as _:
+        df = collect()
 
     analyze(df)
 
     return df
+
 
 if __name__ == '__main__':
     main()
