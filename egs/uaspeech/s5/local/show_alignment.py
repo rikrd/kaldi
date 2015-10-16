@@ -21,6 +21,7 @@ Options:
 
 from __future__ import print_function, unicode_literals
 import os
+import json
 import random
 import subprocess
 import scipy
@@ -117,6 +118,20 @@ def show_alignment_wavesurferjs(utt_id, alignments):
                       for start, end, label in segments
                       if label != 'SIL']
 
+    regions = []
+    for start, end, label in segments_clean:
+        rgba = 'rgba({},{},{}, 0.3)'.format(random.randint(0, 255),
+                                            random.randint(0, 255),
+                                            random.randint(0, 255))
+
+        regions.append({'start': start,
+                        'end': end,
+                        'color': rgba,
+                        'attributes': {
+                            'label': label
+                        }
+                        })
+
     regions_add = ''
     for start, end, label in segments_clean:
         rgba = 'rgba({},{},{}, 0.3)'.format(random.randint(0, 255),
@@ -142,11 +157,19 @@ def show_alignment_wavesurferjs(utt_id, alignments):
 
         <!-- regions plugin -->
         <script src="js/wavesurfer.regions.js"></script>
+
+        <link rel="stylesheet" href="css/app.css" />
     </head>
     <body>
         <div id="wave">
         </div>
         <script>
+            function loadRegions(regions) {
+                regions.forEach(function (region) {
+                    wavesurfer.addRegion(region);
+                });
+            }
+
             var wavesurfer = Object.create(WaveSurfer);
 
             wavesurfer.init({
@@ -157,27 +180,41 @@ def show_alignment_wavesurferjs(utt_id, alignments):
             });
 
             wavesurfer.on('ready', function () {
-%s
-                wavesurfer.play();
+                wavesurfer.util.ajax({
+                    responseType: 'json',
+                    url: '/regions'
+                }).on('success', function (data) {
+                    loadRegions(data);
+                    wavesurfer.play();
+                });
             });
 
             wavesurfer.load('%s');
         </script>
     </body>
 </html>
-    ''' % (regions_add, 'audio/' + wav_filename,)
+    ''' % ('audio/' + wav_filename,)
 
     @bottle.route('/')
-    def index():
+    def bottle_index():
         return index_html
 
     @bottle.route('/js/<filename:path>')
-    def server_static(filename):
+    def bottle_js(filename):
+        return bottle.static_file(filename, root=os.path.join(os.path.dirname(__file__)))
+
+    @bottle.route('/css/<filename:path>')
+    def bottle_css(filename):
         return bottle.static_file(filename, root=os.path.join(os.path.dirname(__file__)))
 
     @bottle.route('/audio/<filename:path>')
-    def server_static(filename):
+    def bottle_audio(filename):
         return bottle.static_file(filename, root=os.path.expanduser('~'))
+
+    @bottle.route('/regions')
+    def bottle_regions():
+        bottle.response.content_type = 'application/json'
+        return json.dumps(regions)
 
     bottle.run(host='localhost', port=8080)
 
