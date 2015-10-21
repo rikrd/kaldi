@@ -24,11 +24,7 @@ import os
 import json
 import random
 import subprocess
-import scipy
-import scipy.io.wavfile as wavefile
-import matplotlib.pyplot as pplot
 import docopt
-import bottle
 
 __author__ = 'rmarxer'
 
@@ -64,8 +60,6 @@ def make_regions(segments):
 
 
 def load_alignments(alignment_filename, lang_directory):
-    print('Loading {} ...'.format(alignment_filename))
-
     data = load_uaspeech(lang_directory)
 
     model_filename = os.path.join(os.path.dirname(alignment_filename), 'final.mdl')
