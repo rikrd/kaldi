@@ -33,6 +33,14 @@ import bottle
 __author__ = 'rmarxer'
 
 
+def load_uaspeech(lang_directory):
+    dataset_filename = os.path.join(lang_directory, 'results/data/lang_largevocab_test/../../tmp/uaspeech.json')
+    with open(dataset_filename) as f:
+        data = json.load(f)
+
+    return data
+
+
 def make_regions(segments):
     # Prepare the segments for the wavesurfer regions plugin
     segments_clean = [(start, end, label.replace('_B', '').replace('_E', '').replace('_I', '').replace('_S', ''))
@@ -57,6 +65,8 @@ def make_regions(segments):
 
 def load_alignments(alignment_filename, lang_directory):
     print('Loading {} ...'.format(alignment_filename))
+
+    data = load_uaspeech(lang_directory)
 
     model_filename = os.path.join(os.path.dirname(alignment_filename), 'final.mdl')
 
@@ -89,9 +99,14 @@ def load_alignments(alignment_filename, lang_directory):
 
         wav_filename = os.path.relpath(wav_filename, os.path.expanduser('~'))
 
-        results.append({'utterance_id': utt_id,
-                        'regions': make_regions(segments),
-                        'wav_filename': wav_filename})
+        result = {'utterance_id': utt_id,
+                  'regions': make_regions(segments),
+                  'wav_filename': wav_filename}
+
+        result.update(data['utterances'][utt_id])
+        result.update(data['speakers'][result['speaker_id']])
+        
+        results.append(result)
 
     return results
 
