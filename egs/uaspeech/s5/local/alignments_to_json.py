@@ -30,7 +30,7 @@ __author__ = 'rmarxer'
 
 
 def load_uaspeech(lang_directory):
-    dataset_filename = os.path.join(lang_directory, 'results/data/lang_largevocab_test/../../tmp/uaspeech.json')
+    dataset_filename = os.path.join(lang_directory, '../../tmp/uaspeech.json')
     with open(dataset_filename) as f:
         data = json.load(f)
 
@@ -85,21 +85,19 @@ def load_alignments(alignment_filename, lang_directory):
     for utt_id, segments in alignments.iteritems():
         speaker, block, word, mic = utt_id.split('_')
 
-        wav_filename = '/Users/rmarxer/data/UASPEECH/audio/{}{}/{}.wav'.format('control/'
-                                                                               if speaker.startswith('C')
-                                                                               else '',
-                                                                               speaker,
-                                                                               utt_id)
-
-        wav_filename = os.path.relpath(wav_filename, os.path.expanduser('~'))
+        wav_filename = 'data/UASPEECH/audio/{}{}/{}.wav'.format('control/'
+                                                                if speaker.startswith('C')
+                                                                else '',
+                                                                speaker,
+                                                                utt_id)
 
         result = {'utterance_id': utt_id,
                   'regions': make_regions(segments),
                   'wav_filename': wav_filename}
 
         result.update(data['utterances'][utt_id])
-        result.update(data['speakers'][result['speaker_id']])
-        
+        result.update(data['speakers'][result['speaker']])
+
         results.append(result)
 
     return results
