@@ -9,9 +9,6 @@
 nJobs=40
 nDecodeJobs=40
 
-AUDIO_PATH=/export/corpora5/LDC/LDC2013S08/
-TEXT_PATH=/export/corpora5/LDC/LDC2013T20/
-
 galeData=GALE/
 
 # You can run the script from here automatically, but it is recommended to run the data preparation,
