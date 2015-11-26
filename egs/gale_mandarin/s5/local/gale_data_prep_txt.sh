@@ -52,7 +52,7 @@ perl -p -i -e 's=/.$==g' contentall.tmp
 cd $cur
 
 
-pyver=`python --version 2>&1 | sed -e 's:.*\([2-3]\.[0-9]\+\).*:\1:g'`
+pyver=`python --version 2>&1 | sed -e 's:.*Python \([2-3]\.[0-9]\+\).*:\1:g'`
 export PYTHONPATH=$PYTHONPATH:`pwd`/tools/mmseg-1.3.0/lib/python${pyver}/site-packages
 if [ ! -d tools/mmseg-1.3.0/lib/python${pyver}/site-packages ]; then
   echo "--- Downloading mmseg-1.3.0 ..."
