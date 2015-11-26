@@ -1,0 +1,16 @@
+Mac OSX
+====
+
+This recipe is incompatible with MacOS flavours of sed / awk / readlink. In order to fix this problem you must create a bin dir and link the GNU flavours of those binaries in there, then you must add that dir to the begining of the PATH variable.
+
+```
+mkdir -p bin
+ln -s /usr/local/bin/gawk bin/awk
+ln -s /usr/local/bin/gsed bin/sed
+ln -s /usr/local/bin/greadlink bin/readlink
+
+echo 'export PATH=$PWD/bin:$PATH' >> path.sh
+```
+
+
+
