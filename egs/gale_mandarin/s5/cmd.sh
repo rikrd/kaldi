@@ -17,7 +17,6 @@ fullhost=`hostname -f`
 # If on the Iceberg cluster...
 if [[ ${fullhost} == *"iceberg.shef.ac.uk" ]]; then
   module load apps/python/conda
-  module load compilers/gcc/4.9.2
   
   source activate anaconda2-2.3.0
 
