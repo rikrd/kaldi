@@ -7,6 +7,6 @@ do
 
     logfile=~/log_gale_mandarin_${filename}.txt
 
-    qsub -l mem=24G,rmem=20G,h_rt=48:00:00 -j y -o ${logfile} ${scriptname}
+    qsub -l mem=28G,rmem=24G,h_rt=48:00:00 -j y -o ${logfile} ${scriptname}
 done
 
