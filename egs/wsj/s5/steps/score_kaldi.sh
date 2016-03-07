@@ -137,12 +137,18 @@ if [ $stage -le 1 ]; then
       cat $dir/scoring_kaldi/wer_details/per_utt \| \
       utils/scoring/wer_ops_details.pl --special-symbol "'***'" \| \
       sort -b -i -k 1,1 -k 4,4rn -k 2,2 -k 3,3 \> $dir/scoring_kaldi/wer_details/ops || exit 1;
+
+    $cmd $dir/scoring_kaldi/log/wer_bootci.log \
+      compute-wer-bootci \
+        ark:$dir/scoring_kaldi/test_filt.txt ark:$dir/scoring_kaldi/penalty_$best_wip/$best_lmwt.txt \
+        '>' $dir/scoring_kaldi/wer_details/wer_bootci || exit 1;
+    
   fi
 fi
 
 # If we got here, the scoring was successful.
 # As a  small aid to prevent confusion, we remove all wer_{?,??} files;
-# these originate from the previous version of the scoring files 
+# these originate from the previous version of the scoring files
 rm $dir/wer_{?,??} 2>/dev/null
 
 exit 0;
