@@ -17,6 +17,8 @@ import matplotlib.pyplot as pplot
 import sys
 import re
 
+import htk
+
 __author__ = 'rmarxer'
 
 
@@ -44,6 +46,20 @@ def translate_filename(filename, uaspeech_uttids):
         return None
 
     return uaspeech_uttids[uttid]
+
+
+def load_mlf_2(mlf_filename, uaspeech_uttids):
+    print('Loading {} ...'.format(mlf_filename))
+    vad = {}
+
+    mlf = htk.load_mlf(mlf_filename)
+    for uttid, hypotheses in mlf.iteritems():
+        current_filename = translate_filename(uttid, uaspeech_uttids)
+        if current_filename is not None:
+            vad[translate_filename(uttid, uaspeech_uttids)] = map(lambda label: dict(label._asdict()),
+                                                                  hypotheses[0])
+
+    return vad
 
 
 def load_mlf(mlf_filename, uaspeech_uttids):
@@ -94,8 +110,8 @@ def show_mlf(utt_id, mlf):
     mlf_rate = 10000000
 
     for segment in mlf[utt_id]:
-        start = segment['start']
-        end = segment['end']
+        start = float(segment['start'])
+        end = float(segment['end'])
 
         word = segment['word']
 
@@ -106,7 +122,7 @@ def show_mlf(utt_id, mlf):
 
 
 def main():
-    mlf_filename = 'conf/christensen_endpoints.mlf'
+    mlf_filename = 'conf/christensen_endpoints_v2.mlf'
     utt_id = None
 
     if len(sys.argv) > 1:
@@ -120,7 +136,7 @@ def main():
 
     uaspeech_uttids = {k.replace('_', ''): k for k in uaspeech['utterances']}
 
-    vad = load_mlf(mlf_filename, uaspeech_uttids)
+    vad = load_mlf_2(mlf_filename, uaspeech_uttids)
 
     if not utt_id:
         utt_id = vad.keys()[int(random.random()*len(vad))]

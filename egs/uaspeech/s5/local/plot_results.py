@@ -14,9 +14,10 @@ SIDD_BEST_RESULTS = [86.87, 69.54, 62.98, 28.71]
 
 def analyze(df):
     df['accuracy'] = (df['total'] - df['errors']) * 100.0 / df['total']
-    df['intelligibility_class'] = df['intelligibility_class'].astype('category')
-    df['intelligibility_class'] = df['intelligibility_class'].cat.reorder_categories(['high', 'mid', 'low', 'very low'],
-                                                                                     ordered=True)
+
+    df['intelligibility_class'] = df['intelligibility_class'].astype('category',
+                                                                     categories=['high', 'mid', 'low', 'very low'],
+                                                                     ordered=True)
 
     df['setting'] = df['setting'].astype('category',
                                          categories=['leave_one_out', 'adapt_to_one', 'sidd'],
@@ -25,6 +26,7 @@ def analyze(df):
     grouped = df.groupby(['setting', 'model', 'test', 'intelligibility_class'])
 
     described = grouped.accuracy.describe()
+
     x = described.loc[:, 'tri3b_adapt', 'uaspeechvocab', :, 'mean'].unstack('setting')
 
     # Taken from the paper: http://www.slpat.org/slpat2015/papers/sehgal-cunningham.pdf

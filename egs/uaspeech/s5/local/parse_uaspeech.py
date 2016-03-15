@@ -144,9 +144,10 @@ def parse_uaspeech(uaspeech_path):
         match = re.search(uaspeech_wav_pattern, path, re.IGNORECASE)
 
         if match is None:
-            raise ValueError('File {} did not match the '
-                             'pattern of a UASPEECH recording ({})'.format(path,
-                                                                           uaspeech_wav_pattern))
+            logging.warning('File {} did not match the '
+                            'pattern of a UASPEECH recording ({}). Skipping...'.format(path,
+                                                                                       uaspeech_wav_pattern))
+            continue
 
         utterance.update(match.groupdict())
 
