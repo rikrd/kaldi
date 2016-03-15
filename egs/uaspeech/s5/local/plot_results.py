@@ -18,9 +18,9 @@ def analyze(df):
     df['intelligibility_class'] = df['intelligibility_class'].cat.reorder_categories(['high', 'mid', 'low', 'very low'],
                                                                                      ordered=True)
 
-    df['setting'] = df['setting'].astype('category')
-    df['setting'] = df['setting'].cat.reorder_categories(['leave_one_out', 'adapt_to_one'],
-                                                         ordered=True)
+    df['setting'] = df['setting'].astype('category',
+                                         categories=['leave_one_out', 'adapt_to_one', 'sidd'],
+                                         ordered=True)
 
     grouped = df.groupby(['setting', 'model', 'test', 'intelligibility_class'])
 
